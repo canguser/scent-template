@@ -1,1 +1,1 @@
-export * from './classes/WebComponent';
+export * from './classes/HtmlParser';
