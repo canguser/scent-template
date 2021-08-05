@@ -12,7 +12,7 @@ type RenderDelayCallback = (
         renderSingleText: RenderSingleText
     }) => void
 
-export class HtmlParser {
+export class HtmlRenderer {
 
     private textExpressionMapping = new Map<Text, ExpressionRaw>();
     private attributeExpressionMapping = new Map<Element, ExpressionRaw>();

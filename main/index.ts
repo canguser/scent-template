@@ -1,1 +1,1 @@
-export * from './classes/HtmlParser';
+export * from './classes/HtmlRenderer';
