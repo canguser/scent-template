@@ -1,8 +1,13 @@
 export function waitImmediately(args?: any) {
-    return new Promise(resolve => {
-        setTimeout(() => {
+    return new Promise(async resolve => {
+        if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(() => {
+                resolve(args);
+            });
+        } else {
+            await Promise.resolve();
             resolve(args);
-        }, 0);
+        }
     });
 }
 

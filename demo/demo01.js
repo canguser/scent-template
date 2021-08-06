@@ -1,19 +1,17 @@
 var { HtmlRenderer } = window.scent.template;
 
-console.time('start');
-
 var context = react({
     name: 'Ryan',
     age: 25
 });
 
-var component = new HtmlRenderer($0, convertContext(context));
+var component = new HtmlRenderer(document.body, convertContext(context));
 
 var identityList = [];
 var identityItemMapping = Object.create(null);
 
 component.afterItemRendered(item => {
-    console.log('on single item rendered');
+    // console.log('on single item rendered');
     for (const p of identityList) {
         let items = [];
         if (p in identityItemMapping) {
@@ -25,11 +23,6 @@ component.afterItemRendered(item => {
         identityItemMapping[p] = items;
     }
     identityList = [];
-});
-
-component.afterRendered(() => {
-    console.log('on rendered');
-    console.timeEnd('start');
 });
 
 
@@ -54,3 +47,7 @@ function convertContext(context) {
         }
     });
 }
+
+document.body.addEventListener('click', () => {
+    context.name += 'dsada';
+});
