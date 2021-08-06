@@ -1,6 +1,6 @@
 import { execExpression, getBindingExpressions } from '../utils/ExpressionHelper';
-import { ExpressionRaw } from '../interface/normal.interface';
-import { waitImmediately } from '../utils/NormalUtils';
+import { ExpressionRaw, RenderItem, RenderType } from '../interface/normal.interface';
+import { genStrategyMapper, genUniqueId, waitImmediately } from '../utils/NormalUtils';
 import { getAllElements } from '../utils/DomHelper';
 
 type RenderSingleText = (textNode: Text) => void
@@ -14,16 +14,15 @@ type RenderDelayCallback = (
 
 export class HtmlRenderer {
 
-    private textExpressionMapping = new Map<Text, ExpressionRaw>();
-    private attributeExpressionMapping = new Map<Element, ExpressionRaw>();
-    private eventExpressionMapping = new Map<Element, ExpressionRaw>();
+    private renderingMapping: { [key: string]: RenderItem } = Object.create(null);
 
     private allElements: Element[] = [];
     private allTextNodes: Text[] = [];
 
-    private onTextRenderedCallbackList: Array<(textNode: Text) => any | void> = [];
-    private beforeRenderedCallbackList: Array<() => any | void> = [];
+    private afterItemRenderedCallbackList: Array<(renderItem: RenderItem) => any> = [];
     private afterRenderedCallbackList: Array<() => any | void> = [];
+
+    private beforeRenderedCallbackList: Array<() => any | void> = [];
     private renderDelayCallbackList: Array<RenderDelayCallback> = [];
 
     constructor(private element: Element, private context: any) {
@@ -79,46 +78,69 @@ export class HtmlRenderer {
         }
     }
 
-    async renderSingleTextDelay(textNode: Text) {
-        this.renderDelayCallbackList.push(() => {
-            this.renderSingleText(textNode);
-        });
-        await waitImmediately();
-        this.render();
-        return textNode;
-    }
-
     private renderText() {
         for (const textNode of this.allTextNodes) {
             const { textContent } = textNode || {};
             const data = getBindingExpressions(textContent || '');
             const { expressions } = data;
             if (expressions.length > 0) {
-                this.textExpressionMapping.set(textNode, data);
-                this.renderSingleText(textNode);
+                const renderId = genUniqueId();
+                this.renderingMapping[renderId] = {
+                    id: renderId,
+                    type: RenderType.TEXT,
+                    target: textNode,
+                    data
+                };
+                this.renderSingleItem(renderId);
             }
         }
     }
 
-    private renderSingleText(textNode: Text) {
-        if (this.textExpressionMapping.has(textNode)) {
-            const { raw, expressions } = this.textExpressionMapping.get(textNode);
-            const copyRaw = [...raw];
-            expressions.forEach((expression, i) => {
-                copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
-            });
-            textNode.textContent = copyRaw.join('');
-            this.onTextRenderedCallbackList.forEach(
-                callback => {
-                    callback.call(this, textNode);
+    public async renderSingleItemDelay(renderId: string) {
+        this.renderDelayCallbackList.push(() => {
+            this.renderSingleItem(renderId);
+        });
+        await waitImmediately();
+        this.render();
+        return this.renderingMapping[renderId];
+    }
+
+    private renderSingleItem(renderId: string) {
+        if (renderId in this.renderingMapping) {
+            const renderItem = this.renderingMapping[renderId];
+            const { type } = renderItem || {};
+            const mapper = genStrategyMapper({
+                [RenderType.TEXT]: () => {
+                    this.renderSingleText(renderId);
                 }
-            );
+            }, () => undefined);
+            mapper[type]();
         }
     }
 
-    onTextRendered(callback: (textNode: Text) => any | void) {
+    private renderSingleText(renderId: string) {
+        if (renderId in this.renderingMapping && this.renderingMapping[renderId].type === RenderType.TEXT) {
+            const renderItem = this.renderingMapping[renderId];
+            const { data, target } = renderItem || {};
+            if (target) {
+                const { raw, expressions } = data || {};
+                const copyRaw = [...raw];
+                expressions.forEach((expression, i) => {
+                    copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
+                });
+                target.textContent = copyRaw.join('');
+                this.afterItemRenderedCallbackList.forEach(
+                    callback => {
+                        callback.call(this, renderItem);
+                    }
+                );
+            }
+        }
+    }
+
+    afterItemRendered(callback: (item: RenderItem) => any) {
         if (typeof callback === 'function') {
-            this.onTextRenderedCallbackList.push(callback);
+            this.afterItemRenderedCallbackList.push(callback);
         }
     }
 

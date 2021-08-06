@@ -1,7 +1,12 @@
 import { ExpressionRaw } from '../interface/normal.interface';
 
 export function execExpression(expression = '', context = {}) {
-    return new Function('context', `with(context){return (${expression})}`)(context);
+    try {
+        return new Function('context', `with(context){return (${expression})}`)(context);
+    } catch (e) {
+        console.warn('there\'s some un-except expression: ' + expression, e);
+        return null;
+    }
 }
 
 export function getBindingExpressions(text = '', prefix = '{{', suffix = '}}'): ExpressionRaw {

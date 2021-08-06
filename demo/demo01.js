@@ -1,32 +1,35 @@
-var { WebComponent } = window.scent.template;
+var { HtmlRenderer } = window.scent.template;
+
+console.time('start');
 
 var context = react({
     name: 'Ryan',
     age: 25
 });
 
-var component = new WebComponent($0, convertContext(context));
+var component = new HtmlRenderer($0, convertContext(context));
 
 var identityList = [];
-var identityTextMapping = new Map();
+var identityItemMapping = Object.create(null);
 
-component.onTextRendered((textNode) => {
-    console.log('on single text rendered');
+component.afterItemRendered(item => {
+    console.log('on single item rendered');
     for (const p of identityList) {
-        let nodes = [];
-        if (identityTextMapping.has(p)) {
-            nodes = identityTextMapping.get(p) || [];
+        let items = [];
+        if (p in identityItemMapping) {
+            items = identityItemMapping[p] || [];
         }
-        if (!nodes.includes(textNode)) {
-            nodes.push(textNode);
+        if (!items.includes(item)) {
+            items.push(item);
         }
-        identityTextMapping.set(p, nodes);
+        identityItemMapping[p] = items;
     }
     identityList = [];
 });
 
 component.afterRendered(() => {
     console.log('on rendered');
+    console.timeEnd('start');
 });
 
 
@@ -34,9 +37,9 @@ function react(obj) {
     return new Proxy(obj, {
         set(target, p, value, receiver) {
             const result = Reflect.set(target, p, value, receiver);
-            const nodes = identityTextMapping.get(p) || [];
-            for (const node of nodes) {
-                component.renderSingleTextDelay(node);
+            const items = identityItemMapping[p] || [];
+            for (const item of items) {
+                component.renderSingleItemDelay(item.id);
             }
             return result;
         }
