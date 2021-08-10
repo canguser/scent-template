@@ -1,10 +1,10 @@
 import { execExpression, getBindingExpressions } from '../utils/ExpressionHelper';
-import { Directive, DirectiveParams, RenderItem, RenderType } from '../interface/normal.interface';
+import { Directive, DirectiveHookParams, DirectiveParams, RenderItem, RenderType } from '../interface/normal.interface';
 import {
     compatiblePromise,
     ergodicTree,
     genStrategyMapper,
-    genUniqueId,
+    genUniqueId, ref,
     waitImmediately,
     waitNextFrame
 } from '../utils/NormalUtils';
@@ -42,7 +42,7 @@ const defaultDirective: Directive = {
     },
     afterRendered() {
     },
-    render(params: DirectiveParams): void {
+    render(params: DirectiveHookParams): void {
     }
 };
 
@@ -80,8 +80,7 @@ export class HtmlRenderer {
         ergodicTree(this.element)(
             (node, parent, preventDeeply) => {
                 this.renderNode(node);
-                if (this.childParserMap.has(node)) {
-                    this.childParserMap.get(node).renderAll();
+                if (this.childRendererMap.has(node)) {
                     preventDeeply();
                 }
             }
@@ -89,10 +88,10 @@ export class HtmlRenderer {
         console.timeEnd('rendering to being ready');
     }
 
-    private childParserMap = new Map<Node, HtmlRenderer>();
+    private childRendererMap = new Map<Node, HtmlRenderer>();
 
-    public attachChildParser(node: Node, context: any = {}) {
-        this.childParserMap.set(node, new HtmlRenderer({
+    public attachChildRenderer(node: Node, context: any = {}) {
+        const parser = new HtmlRenderer({
             ...this.options,
             context: new Proxy(this.context, {
                 get(target: any, p: string | symbol, receiver: any): any {
@@ -102,7 +101,36 @@ export class HtmlRenderer {
                     return Reflect.get(target, p, receiver);
                 }
             })
-        }));
+        });
+        parser.parentRenderer = this;
+        this.childRendererMap.set(node, parser);
+        return parser;
+    }
+
+    public addChildRenderer(renderer: HtmlRenderer): void {
+        renderer.parentRenderer = this;
+        this.childRendererMap.set(renderer.element, renderer);
+    }
+
+    private parentRenderer: HtmlRenderer;
+
+    public tearChildParser(node) {
+        const renderer = this.childRendererMap.get(node);
+        if (renderer) {
+            renderer.parentRenderer = undefined;
+            this.childRendererMap.delete(node);
+        }
+    }
+
+    public mount(query) {
+        const ele = document.querySelector(query);
+        ele.parentElement.replaceChild(this.element, ele);
+        this.renderAll();
+    }
+
+    public unmount() {
+        this.element.parentElement.removeChild(this.element);
+
     }
 
     public renderNode(node: Node): void {
@@ -127,17 +155,21 @@ export class HtmlRenderer {
             const [realName, attribute] = directiveName.split(':');
             const directive = this.getMatchedDirective(realName);
             if (directive) {
+                const params = {
+                    key: realName,
+                    attribute,
+                    expression: ele.getAttribute(directiveName)
+                };
                 if (directive.isScoped && ele !== this.element) {
-                    this.attachChildParser(ele, directive.scopedContext);
+                    const rendererList = directive.defineScope(ele, params);
+                    for (const renderer of rendererList) {
+                        this.addChildRenderer(renderer);
+                    }
                     return;
                 }
                 directiveInfos.push({
                     directive,
-                    params: {
-                        key: realName,
-                        attribute,
-                        expression: ele.getAttribute(directiveName)
-                    }
+                    params
                 });
             }
         }
@@ -158,7 +190,7 @@ export class HtmlRenderer {
         }
     }
 
-    public async render() {
+    public render() {
 
         if (!this.renderIdDelayQueue || this.renderIdDelayQueue.length === 0) {
             return this.element;
@@ -172,39 +204,42 @@ export class HtmlRenderer {
         );
 
         // render logic
-        const promise = Promise.all(
+        const renderCallbacks =
             this.renderIdDelayQueue
-                .map(async renderId => {
-                    const callback = this.renderDelayCallbackMapping[renderId];
-                    await waitNextFrame();
-                    callback.call(this, this);
-                })
-        );
+                .map(renderId => this.renderDelayCallbackMapping[renderId]);
+
+        const promise = Promise.resolve()
+            .then(() => Promise.all(
+                renderCallbacks.map(
+                    cb => waitNextFrame()
+                        .then(() => cb.call(this))
+                )
+            ));
 
         this.renderIdDelayQueue = [];
         this.renderDelayCallbackMapping = {};
 
-        await promise;
-
-        // call after hooks
-        this.afterRenderedCallbackList.forEach(
-            callback => {
-                callback.call(this);
-            }
-        );
-
-        // call next tick
-        this.nextTicksCallbackList.forEach(
-            callback => {
-                if (typeof callback === 'function') {
+        return promise.then(() => {
+            // call after hooks
+            this.afterRenderedCallbackList.forEach(
+                callback => {
                     callback.call(this);
                 }
-            }
-        );
+            );
 
-        this.nextTicksCallbackList = [];
+            // call next tick
+            this.nextTicksCallbackList.forEach(
+                callback => {
+                    if (typeof callback === 'function') {
+                        callback.call(this);
+                    }
+                }
+            );
 
-        return this.element;
+            this.nextTicksCallbackList = [];
+
+            return this.element;
+        });
     }
 
     beforeRendered(callback: () => any | void) {
@@ -250,9 +285,8 @@ export class HtmlRenderer {
             }
         };
         const preventSub: boolean | Promise<boolean> = directive.created.call(this.context, ele);
-        this.renderSingleItemDelay(renderId).then(() => {
-            directive.afterMounted.call(this.context, ele);
-        });
+        this.renderSingleItemDelay(renderId);
+        // todo - after render?
         return preventSub;
     }
 
@@ -264,11 +298,17 @@ export class HtmlRenderer {
         }
     }
 
-    public async renderSingleItemDelay(renderId: string) {
+    public renderSingleItemDelay(renderId: string): void {
+
+        // add rendering task for current renderId
         this.renderIdDelayQueue.push(renderId);
         this.renderDelayCallbackMapping[renderId] = () => this.renderSingleItem(renderId);
-        await this.render();
-        return this.renderingMapping[renderId];
+
+        // make render async
+        // using waitImmediately to wait all changes in this moment
+        waitImmediately(this)
+            .then(() => this.render());
+
     }
 
     private renderSingleItem(renderId: string) {
@@ -276,28 +316,10 @@ export class HtmlRenderer {
             const renderItem = this.renderingMapping[renderId];
             const { type } = renderItem || {};
             const mapper = genStrategyMapper({
-                [RenderType.TEXT]: () => {
-                    this.renderSingleText(renderId);
-                },
-                [RenderType.DIRECTIVE]: () => {
-                    this.renderSingleDirective(renderId);
-                }
+                [RenderType.TEXT]: () => this.renderSingleText(renderId),
+                [RenderType.DIRECTIVE]: () => this.renderSingleDirective(renderId)
             }, () => undefined);
-            mapper[type]();
-        }
-    }
-
-    private renderSingleText(renderId: string) {
-        if (renderId in this.renderingMapping && this.renderingMapping[renderId].type === RenderType.TEXT) {
-            const renderItem = this.renderingMapping[renderId];
-            const { data, target } = renderItem || {};
-            if (target && inDocument(target)) {
-                const { raw, expressions } = data || {};
-                const copyRaw = [...raw];
-                expressions.forEach((expression, i) => {
-                    copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
-                });
-                target.textContent = copyRaw.join('');
+            if (mapper[type]()) {
                 this.afterItemRenderedCallbackList.forEach(
                     callback => {
                         callback.call(this, renderItem);
@@ -305,6 +327,23 @@ export class HtmlRenderer {
                 );
             }
         }
+    }
+
+    private renderSingleText(renderId: string): boolean {
+        if (renderId in this.renderingMapping && this.renderingMapping[renderId].type === RenderType.TEXT) {
+            const renderItem = this.renderingMapping[renderId];
+            const { data, target } = renderItem || {};
+            if (target) {
+                const { raw, expressions } = data || {};
+                const copyRaw = [...raw];
+                expressions.forEach((expression, i) => {
+                    copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
+                });
+                target.textContent = copyRaw.join('');
+            }
+            return true;
+        }
+        return false;
     }
 
     afterItemRendered(callback: (item: RenderItem) => any) {

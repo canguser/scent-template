@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "yarn run rollup && yarn run rollup:mini && yarn run rollup:esm:es5",
+    "build-dev": "yarn run rollup",
     "do-publish": "yarn run build && yarn run run-publish ",
     "run-publish": "yarn publish --access public --tag latest --new-version $npm_package_version",
     "rollup": "rollup -c",

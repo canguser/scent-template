@@ -1,3 +1,5 @@
+import { HtmlRenderer } from '..';
+
 export interface ExpressionRaw {
     raw: string[],
     expressions: string[]
@@ -32,11 +34,17 @@ export interface Directive {
     isScoped?: boolean,
     scopedContext?: any,
 
-    render?(params: DirectiveParams): void
+    render?(params: DirectiveHookParams): void
+
+    defineScope?(dom, params: DirectiveParams): HtmlRenderer[]
 }
 
 export interface DirectiveParams {
     key: string,
     attribute?: string,
     expression: string
+}
+
+export interface DirectiveArgs {
+    [key: string]: string
 }

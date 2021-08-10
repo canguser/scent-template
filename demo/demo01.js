@@ -6,7 +6,7 @@ var context = react({
 });
 
 var component = new HtmlRenderer({
-    element: document.body, context: convertContext(context)
+    element: document.querySelector('.app'), context: convertContext(context)
 });
 
 var identityList = [];
@@ -27,19 +27,21 @@ component.afterItemRendered(item => {
     identityList = [];
 });
 
+component.mount('.app');
 
 function react(obj) {
     return new Proxy(obj, {
         set(target, p, value, receiver) {
             const result = Reflect.set(target, p, value, receiver);
             const items = identityItemMapping[p] || [];
+            console.time('setter:' + p);
             for (const item of items) {
                 component.renderSingleItemDelay(item.id);
+                // a.push(item)
             }
-            console.time('setter');
             component.nextTick()
                 .then(() => {
-                    console.timeEnd('setter');
+                    console.timeEnd('setter:' + p);
                 });
             return result;
         }

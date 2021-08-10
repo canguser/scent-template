@@ -1,7 +1,14 @@
-export function waitImmediately(args?: any) {
-    return new Promise(resolve => {
-        setTimeout(resolve, 0);
-    });
+export function waitImmediately(context?: any, apiName: string = '_waitImmediatelyPS') {
+    if (!context[apiName]) {
+        context[apiName] = new Promise(resolve => {
+            setTimeout(() => {
+                context[apiName] = undefined;
+                delete context[apiName];
+                resolve(undefined);
+            }, 0);
+        });
+    }
+    return context[apiName];
 }
 
 export function waitNextFrame(args?: any) {
@@ -16,6 +23,8 @@ export function waitNextFrame(args?: any) {
         }
     });
 }
+
+export const ref = window.requestAnimationFrame;
 
 let uniqueInt = -9999999;
 
