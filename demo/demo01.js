@@ -1,71 +1,24 @@
-var { HtmlRenderer } = window.scent.template;
+const { HtmlRenderer, reactContext } = window.scent.template;
 
-var context = react({
-    name: 'Ryan',
-    age: 25
+const renderer = new HtmlRenderer({
+    element: '.app'
 });
 
-var component = new HtmlRenderer({
-    element: document.querySelector('.app'), context: convertContext(context)
+
+const context = reactContext(renderer, {
+    name: 'ryan',
+    gender: 'male',
+    age: '25'
 });
 
-var identityList = [];
-var identityItemMapping = Object.create(null);
+console.time('rendered');
 
-component.afterItemRendered(item => {
-    // console.log('on single item rendered');
-    for (const p of identityList) {
-        let items = [];
-        if (p in identityItemMapping) {
-            items = identityItemMapping[p] || [];
-        }
-        if (!items.includes(item)) {
-            items.push(item);
-        }
-        identityItemMapping[p] = items;
-    }
-    identityList = [];
+renderer.nextTick(() => {
+    console.timeEnd('rendered');
 });
 
-component.mount('.app');
-
-function react(obj) {
-    return new Proxy(obj, {
-        set(target, p, value, receiver) {
-            const result = Reflect.set(target, p, value, receiver);
-            const items = identityItemMapping[p] || [];
-            console.time('setter:' + p);
-            for (const item of items) {
-                component.renderSingleItemDelay(item.id);
-                // a.push(item)
-            }
-            component.nextTick()
-                .then(() => {
-                    console.timeEnd('setter:' + p);
-                });
-            return result;
-        }
-    });
-}
-
-function convertContext(context) {
-    return new Proxy(context, {
-        get(target, p, receiver) {
-            identityList.push(p);
-            return Reflect.get(target, p, receiver);
-        }
-    });
-}
-
-document.body.addEventListener('click', () => {
-    context.name += 'dsada';
+renderer.afterRendered(() => {
+    console.log('rendered');
 });
 
-const d = {
-    mounted({ dom, value, key }) {
-        if (value && dom.parentElement) {
-            const commentsEle = document.createComment('id');
-            dom.parentElement.replaceChild(commentsEle, dom);
-        }
-    }
-};
+renderer.mount();

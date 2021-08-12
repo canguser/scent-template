@@ -7,7 +7,8 @@ export interface ExpressionRaw {
 
 export enum RenderType {
     TEXT = 'text',
-    DIRECTIVE = 'directive'
+    DIRECTIVE = 'directive',
+    CHILD_PARSER = 'child_parser'
 }
 
 export interface RenderItem {
@@ -20,7 +21,8 @@ export interface RenderItem {
 
 export interface DirectiveHookParams {
     target: Element,
-    params: DirectiveParams,
+    params: DirectiveResultParams,
+    scopedRenderers: HtmlRenderer[]
     trans: any
 }
 
@@ -32,7 +34,6 @@ export interface Directive {
     name: string,
 
     isScoped?: boolean,
-    scopedContext?: any,
 
     render?(params: DirectiveHookParams): void
 
@@ -43,6 +44,12 @@ export interface DirectiveParams {
     key: string,
     attribute?: string,
     expression: string
+}
+
+export interface DirectiveResultParams {
+    key: string,
+    attribute?: string,
+    result: any
 }
 
 export interface DirectiveArgs {
