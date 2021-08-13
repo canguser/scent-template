@@ -22,3 +22,4 @@ renderer.afterRendered(() => {
 });
 
 renderer.mount();
+renderer.renderAll();

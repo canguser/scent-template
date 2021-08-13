@@ -16,6 +16,7 @@ export interface RenderItem {
     type: RenderType,
     target?: any,
     renderer?: any,
+    directive?: Directive,
     data?: any
 }
 
@@ -35,9 +36,12 @@ export interface Directive {
 
     isScoped?: boolean,
 
-    render?(params: DirectiveHookParams): void
+    render?(params: DirectiveHookParams)
 
-    defineScope?(dom, params: DirectiveParams): HtmlRenderer[]
+
+    defineScopes?(params: DirectiveResultParams): any
+
+    defineTemplates?(template: ScopeTemplate, params: DirectiveResultParams): { [key: string]: HtmlRenderer }
 }
 
 export interface DirectiveParams {
@@ -46,12 +50,19 @@ export interface DirectiveParams {
     expression: string
 }
 
-export interface DirectiveResultParams {
-    key: string,
-    attribute?: string,
+export interface DirectiveResultParams extends DirectiveParams {
+    attributeValue?: string,
     result: any
 }
 
 export interface DirectiveArgs {
     [key: string]: string
+}
+
+export interface ScopeTemplate {
+
+    from?(key: any, context?: any)
+
+    forNew?(ele: Element, context?: any)
+
 }

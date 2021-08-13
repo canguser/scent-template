@@ -6,23 +6,29 @@ const renderer = new HtmlRenderer({
         {
             name: 'if',
             isScoped: true,
+            defineTemplates(template, params) {
+                if (!params.result) {
+                    return {};
+                }
+                return {
+                    ...template.from(0)
+                };
+            },
             render({ params, target, trans = {} }) {
-                const { result } = params;
-                const { lastAssert } = trans;
-                if (lastAssert === result) {
-                    return;
-                }
-                trans.lastAssert = result;
-                if (!result) {
-                    const commentNode = document.createComment('if');
-                    trans.tempNode = commentNode;
-                    target.parentElement.replaceChild(commentNode, target);
-                } else if (trans.tempNode) {
-                    trans.tempNode.parentElement.replaceChild(target, trans.tempNode);
-                }
-                // console.log(params);
-                // console.log(target);
-                // console.log(trans);
+            }
+        },
+        {
+            name: 'for',
+            isScoped: true,
+            defineTemplates(template, params) {
+                return params.result.reduce(
+                    (r, item, i) => {
+                        Object.assign(r, template.from(i, {
+                            [params.attributeValue]: item
+                        }));
+                        return r;
+                    }, {}
+                );
             }
         }
     ]
@@ -31,7 +37,8 @@ const renderer = new HtmlRenderer({
 const context = reactContext(renderer, {
     name: 'ryan',
     gender: 'male',
-    age: '25'
+    age: '25',
+    schools: ['bj', 'bl']
 });
 
 renderer.afterRendered(() => {
@@ -39,4 +46,31 @@ renderer.afterRendered(() => {
 });
 
 renderer.mount();
+renderer.renderAll();
+
+const ifd = {
+
+    isScoped: true,
+
+    defineTemplate(
+        {
+            value,
+            attribute,
+            scopeTemplate
+        }
+    ) {
+        return [
+            scopeTemplate.from(0, {})
+        ];
+    },
+
+    defineScopes(
+        {
+            value,
+            attribute
+        }
+    ) {
+    }
+
+};
 

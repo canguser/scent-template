@@ -3,23 +3,23 @@ export * from './utils/NormalUtils';
 
 export function reactContext(component, context) {
 
-    component.afterItemRendered(item => {
+    component.afterContextUsed(renderId => {
         // console.log('on single item rendered');
         for (const p of identityList) {
-            let items = [];
-            if (p in identityItemMapping) {
-                items = identityItemMapping[p] || [];
+            let renderIdList = [];
+            if (p in identityRenderIdMapping) {
+                renderIdList = identityRenderIdMapping[p] || [];
             }
-            if (!items.includes(item)) {
-                items.push(item);
+            if (!renderIdList.includes(renderId)) {
+                renderIdList.push(renderId);
             }
-            identityItemMapping[p] = items;
+            identityRenderIdMapping[p] = renderIdList;
         }
         identityList = [];
     });
 
     var identityList = [];
-    var identityItemMapping = Object.create(null);
+    var identityRenderIdMapping = Object.create(null);
 
     function react(obj) {
         return new Proxy(obj, {
@@ -29,11 +29,10 @@ export function reactContext(component, context) {
             },
             set(target, p: string, value, receiver) {
                 const result = Reflect.set(target, p, value, receiver);
-                const items = identityItemMapping[p] || [];
+                const renderIdList = identityRenderIdMapping[p] || [];
                 console.time('setter:' + p);
-                for (const item of items) {
-                    component.renderSingleItemDelay(item.id);
-                    // a.push(item)
+                for (const renderId of renderIdList) {
+                    component.renderSingleItemDelay(renderId);
                 }
                 component.nextTick()
                     .then(() => {

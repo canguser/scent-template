@@ -15,3 +15,20 @@ export function inDocument(node: Node) {
     }
     return inDocument(node.parentNode);
 }
+
+export function replaceCommonNode(node, comment: string) {
+    const commentNode = document.createComment(comment);
+    if (node.parentElement) {
+        node.parentElement.replaceChild(commentNode, node);
+    }
+    return commentNode;
+}
+
+export function removeAttribute(ele, prefix) {
+    const attributes = ele.getAttributeNames();
+    for (const key of attributes) {
+        if (key.startsWith(prefix + ':') || key === prefix) {
+            ele.removeAttribute(key);
+        }
+    }
+}
