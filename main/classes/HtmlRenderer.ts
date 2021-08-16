@@ -5,10 +5,11 @@ import {
     DirectiveParams,
     DirectiveResultParams,
     RenderItem,
-    RenderType, ScopeTemplate
+    RenderType,
+    ScopeTemplate
 } from '../interface/normal.interface';
 import { ergodicTree, genStrategyMapper, genUniqueId, waitImmediately, waitNextFrame } from '../utils/NormalUtils';
-import { removeAttribute, replaceCommonNode } from '../utils/DomHelper';
+import { removeAttribute, replaceCommonNode, unmountDom } from '../utils/DomHelper';
 
 type RenderSingleText = (textNode: Text) => void
 
@@ -63,16 +64,23 @@ export class HtmlRenderer {
     private afterRenderedCallbackList: Array<() => any | void> = [];
 
     private beforeRenderedCallbackList: Array<() => any | void> = [];
+
     private renderIdDelayQueue: Array<string> = [];
     private renderDelayCallbackMapping: { [renderId: string]: () => any } = Object.create(null);
+
+    private renderIdSyncQueue: Array<string> = [];
+    private renderSyncCallbackMapping: { [renderId: string]: () => any } = Object.create(null);
+
     private nextTicksCallbackList: Array<(v?: any) => any | void> = [];
 
-    private element: Element;
     private _context: any = {};
     private directives: Directive[] = [];
     private options: any = {};
-    private originElement: Element;
-    private mountedElement: Element;
+    private scopedNodes = [];
+
+    private element: Element; // data result element
+    private originElement: Element; // template element
+    private mountedElement: Element; // mounted element
 
     private hasBeginRendering: boolean = false;
 
@@ -94,17 +102,29 @@ export class HtmlRenderer {
         this.directives = directives;
     }
 
-    public renderAll() {
+    public renderAll(force = false) {
+        if (force && this.hasBeginRendering) {
+            Object.keys(this.renderingMapping).forEach((renderId) => {
+                this.discardRenderId(renderId);
+            });
+            this.element = this.originElement.cloneNode(true) as Element;
+            this.hasBeginRendering = false;
+        }
         if (!this.hasBeginRendering) {
             this.hasBeginRendering = true;
+            this.scopedNodes = [];
             ergodicTree(this.element)(
                 (node, parent, preventDeeply) => {
                     this.renderNode(node);
-                    if (!node.parentElement) {
+                    if (this.scopedNodes.includes(node)) {
                         preventDeeply();
                     }
                 }
             );
+            const result = this.render();
+            if (!(result instanceof Promise)) {
+                return Promise.resolve(result);
+            }
         } else {
             for (const renderId of Object.keys(this.renderingMapping)) {
                 this.renderSingleItemDelay(renderId);
@@ -151,6 +171,14 @@ export class HtmlRenderer {
         }
     }
 
+    public getRenderItem(renderId: string) {
+        const renderItem = this.renderingMapping[renderId];
+        if (renderItem && renderItem.type === RenderType.CHILD_PARSER) {
+            return renderItem.renderer.getRenderItem(renderId);
+        }
+        return renderItem;
+    }
+
 
     public mount(queryOrElement?: string | Element) {
         let ele;
@@ -170,27 +198,31 @@ export class HtmlRenderer {
         this.mountedElement.parentElement.replaceChild(this.element, this.mountedElement);
     }
 
-    public unmount() {
-        if (this.mountedElement) {
+    public unmount(all = false) {
+        if (all) {
+            unmountDom(this.mountedElement);
+            unmountDom(this.element);
+        } else if (this.mountedElement && this.element.parentElement) {
             this.element.parentElement.replaceChild(this.mountedElement, this.element);
         }
     }
 
-    public renderNode(node: Node): void {
-        const renderItems = this.generateRenderItems(node);
-        for (const item of renderItems || []) {
-            this.registerRenderItem(item);
+    public destroySelf() {
+        this.unmount(true);
+        Object.keys(this.renderingMapping).forEach(renderId => {
+            this.discardRenderId(renderId);
+        });
+        this.hasBeginRendering = false;
+        if (this.parentRenderer) {
+            this.parentRenderer.tearChildParser(this);
         }
     }
 
-    public renderNodeSync(node: Node) {
+    public renderNode(node: Node) {
         const renderItems = this.generateRenderItems(node);
-        const hasParent = !!this.parentRenderer;
+        const { isMounted } = this;
         for (const item of renderItems || []) {
-            this.registerRenderItem(item);
-            if (!hasParent) {
-                this.renderSingleItem(item.id);
-            }
+            this.registerRenderItem(item, isMounted);
         }
     }
 
@@ -211,18 +243,27 @@ export class HtmlRenderer {
     }
 
 
-    private registerRenderItem(item: RenderItem) {
+    private registerRenderItem(item: RenderItem, isAsync = false) {
         this.renderingMapping[item.id] = item;
         if (this.parentRenderer) {
-            this.parentRenderer.registerRenderItem({
+            return this.parentRenderer.registerRenderItem({
                 id: item.id,
                 type: RenderType.CHILD_PARSER,
                 renderer: this,
                 target: item.target
-            });
-        } else {
-            this.renderSingleItemDelay(item.id);
+            }, isAsync);
         }
+
+        if (isAsync) {
+            this.renderSingleItemDelay(item.id);
+        } else {
+            this.renderSingleItemSync(item.id);
+        }
+    }
+
+    private renderSingleItemSync(renderId) {
+        this.emitBeforeItemRenders(renderId);
+        this.addRenderSyncQueue(renderId);
     }
 
     public nextTick(callback?: () => void) {
@@ -245,6 +286,7 @@ export class HtmlRenderer {
                     expression: ele.getAttribute(directiveName)
                 };
                 if (directive.isScoped && ele !== this.element) {
+                    this.scopedNodes.push(ele);
                     const commentNode = replaceCommonNode(ele, 'scoped');
                     // prevent scoped node going next
                     const targetRenderer = new HtmlRenderer({ element: ele, mount: commentNode as Node });
@@ -252,6 +294,7 @@ export class HtmlRenderer {
                     targetRenderer.renderAll();
                     return;
                 } else if (directive.isScoped) {
+                    this.scopedNodes.push(ele);
                     return [this.renderDirective(ele, directive, params)];
                 }
                 directiveInfos.push({
@@ -278,30 +321,64 @@ export class HtmlRenderer {
         }
     }
 
-    public render() {
+    private get hasDelayRenders() {
+        return this.renderIdDelayQueue && this.renderIdDelayQueue.length > 0;
+    }
 
-        if (!this.renderIdDelayQueue || this.renderIdDelayQueue.length === 0) {
-            return this.element;
-        }
+    private get hasSyncRenders() {
+        return this.renderIdSyncQueue && this.renderIdSyncQueue.length > 0;
+    }
 
-        // call before hooks
-        this.beforeRenderedCallbackList.forEach(
-            callback => {
-                callback.call(this);
+    public render(): void | Promise<void> {
+        if (this.hasDelayRenders) {
+            // call before hooks
+            this.beforeRenderedCallbackList.forEach(
+                callback => {
+                    callback.call(this);
+                }
+            );
+
+            if (this.hasSyncRenders) {
+                this.emitSyncRendersQueue();
             }
-        );
+
+            return this.emitDelayRendersQueue()
+                .then(() => {
+                    this.emitAfterRendered();
+                });
+        } else if (this.hasSyncRenders) {
+            this.emitSyncRendersQueue();
+            this.emitAfterRendered();
+        }
+    }
+
+    emitSyncRendersQueue() {
+        const renderCallbacks = this.renderIdSyncQueue.map(renderId => {
+            // this.emitBeforeItemRenders(renderId);
+            return this.renderSyncCallbackMapping[renderId] || (() => null);
+        });
+
+        renderCallbacks.forEach(cb => {
+            cb.call(this);
+        });
+        this.renderIdSyncQueue = [];
+        this.renderSyncCallbackMapping = {};
+    }
+
+    private emitDelayRendersQueue() {
 
         // render logic
         const renderCallbacks =
             this.renderIdDelayQueue
                 .map(renderId => this.renderDelayCallbackMapping[renderId]);
 
+        // const backupRenderIds = [...this.renderIdDelayQueue];
+        //
+        // backupRenderIds.forEach(renderId => {
+        //     this.emitBeforeItemRenders(renderId);
+        // });
+
         const promise = Promise.resolve()
-            .then(() => Promise.all(
-                this.renderIdDelayQueue.map(renderId => waitNextFrame().then(() => {
-                    this.emitBeforeItemRenders(renderId);
-                }))
-            ))
             .then(() => Promise.all(
                 renderCallbacks.map(
                     cb => waitNextFrame()
@@ -312,27 +389,27 @@ export class HtmlRenderer {
         this.renderIdDelayQueue = [];
         this.renderDelayCallbackMapping = {};
 
-        return promise.then(() => {
-            // call after hooks
-            this.afterRenderedCallbackList.forEach(
-                callback => {
+        return promise;
+    }
+
+    emitAfterRendered() {
+        // call after hooks
+        this.afterRenderedCallbackList.forEach(
+            callback => {
+                callback.call(this);
+            }
+        );
+
+        // call next tick
+        this.nextTicksCallbackList.forEach(
+            callback => {
+                if (typeof callback === 'function') {
                     callback.call(this);
                 }
-            );
+            }
+        );
 
-            // call next tick
-            this.nextTicksCallbackList.forEach(
-                callback => {
-                    if (typeof callback === 'function') {
-                        callback.call(this);
-                    }
-                }
-            );
-
-            this.nextTicksCallbackList = [];
-
-            return this.element;
-        });
+        this.nextTicksCallbackList = [];
     }
 
     beforeRendered(callback: () => any | void) {
@@ -360,6 +437,10 @@ export class HtmlRenderer {
                 data
             };
         }
+    }
+
+    get isMounted() {
+        return !!this.element.parentElement;
     }
 
 
@@ -401,26 +482,42 @@ export class HtmlRenderer {
     private renderSingleDirective(renderId: string) {
         const renderItem = this.renderingMapping[renderId] || {};
         const { id, type, directive, data: { params = {}, trans = {} } = {}, target } = renderItem as RenderItem || {};
-
         directive.render.call(this.context, { target, params, trans });
         return true;
     }
 
-    public renderSingleItemDelay(renderId: string): void {
+    private addRenderSyncQueue(renderId) {
 
-        const index = this.renderIdDelayQueue.indexOf(renderId);
+        const index = this.renderIdSyncQueue.indexOf(renderId);
         if (index >= 0) {
-            // if entered the queue, replace it
-            this.renderIdDelayQueue.splice(index, 1, renderId);
-        } else {
-            // add rendering task for current renderId
-            this.renderIdDelayQueue.push(renderId);
+            // if entered the queue, make it last
+            this.renderIdSyncQueue.splice(index, 1);
         }
 
+        // add rendering task for current renderId
+        this.renderIdSyncQueue.push(renderId);
+
+        this.renderSyncCallbackMapping[renderId] = () => this.renderSingleItem(renderId);
+
+    }
+
+    private addRenderDelayQueue(renderId) {
+        const index = this.renderIdDelayQueue.indexOf(renderId);
+        if (index >= 0) {
+            // if entered the queue, make it last
+            this.renderIdDelayQueue.splice(index, 1);
+        }
+
+        // add rendering task for current renderId
+        this.renderIdDelayQueue.push(renderId);
+
         this.renderDelayCallbackMapping[renderId] = () => this.renderSingleItem(renderId);
+    }
 
+    public renderSingleItemDelay(renderId: string): void {
+
+        this.addRenderDelayQueue(renderId);
         this.emitBeforeItemRenders(renderId);
-
         // make render async
         // using waitImmediately to wait all changes in this moment
         waitImmediately(this)
@@ -448,6 +545,7 @@ export class HtmlRenderer {
         const renderItem = this.renderingMapping[renderId];
         const { directive, target, data: { params, trans, templatesMap = {}, mountedKeys = [] } } = renderItem;
         const resultParams = this.getDirectiveResultParams(params);
+        this.emitContextUsed(renderId);
         renderItem.data.params = resultParams;
         if (directive.isScoped) {
             renderItem.data.templatesMap = templatesMap;
@@ -455,7 +553,7 @@ export class HtmlRenderer {
             removeAttribute(target, params.key);
             const scopes = directive.defineScopes(resultParams);
             const templates = directive.defineTemplates({
-                from(key: any, context: any = {}) {
+                from: (key: any, context: any = {}) => {
                     if (key in templatesMap) {
                         return {
                             [key]: templatesMap[key]
@@ -472,30 +570,42 @@ export class HtmlRenderer {
                     };
                 }
             }, resultParams);
+            this.emitContextUsed(renderId);
+
+            // console.log(Object.keys(templates).length);
 
             const keys = Object.keys(templates);
 
             for (const mountedKey of mountedKeys) {
                 if (!keys.includes(mountedKey)) {
-                    templatesMap[mountedKey].unmount();
+                    // console.log(mountedKey, 'destroyed');
+                    templatesMap[mountedKey].destroySelf();
+                    delete templatesMap[mountedKey];
                 }
             }
 
             renderItem.data.mountedKeys = keys;
 
-            console.log(mountedKeys, keys, params.key);
-
             for (const [key, t] of Object.entries(templates)) {
                 if (!mountedKeys.includes(key)) {
+                    // console.log(key, 'init');
                     this.addChildRenderer(t);
                     const mountDOM = t.mountedElement;
                     this.mountedElement.parentElement.insertBefore(mountDOM, this.mountedElement);
-                    t.mount();
+                    // t.mount();
+                    t.renderAll(true)
+                        .then(() => {
+                            setTimeout(() => {
+                                t.mount();
+                            }, 0);
+                        });
+                } else {
+                    // console.log('???');
+                    // console.log(key, 'refresh');
                     t.renderAll();
                 }
             }
         }
-        this.emitContextUsed(renderId);
         directive.beforeRendered(target);
     }
 
@@ -505,8 +615,7 @@ export class HtmlRenderer {
         if (renderer && renderer.parentRenderer === this) {
             renderer.emitBeforeItemRenders(renderId);
         } else {
-            this.tearChildParser(renderer);
-            delete this.renderingMapping[renderId];
+            this.discardRenderId(renderId);
         }
     }
 
@@ -532,17 +641,20 @@ export class HtmlRenderer {
             renderer.renderSingleItem(renderId);
             return true;
         }
-        this.tearChildParser(renderer);
-        delete this.renderingMapping[renderId];
+        this.discardRenderId(renderId);
         return false;
     }
 
     private emitContextUsed(renderId: string) {
-        this.afterContextUsedCallbackList.forEach(
-            callback => {
-                callback.call(this, renderId);
-            }
-        );
+        if (this.parentRenderer) {
+            this.parentRenderer.emitContextUsed(renderId);
+        } else {
+            this.afterContextUsedCallbackList.forEach(
+                callback => {
+                    callback.call(this, renderId);
+                }
+            );
+        }
     }
 
     private renderSingleText(renderId: string): boolean {
@@ -560,6 +672,21 @@ export class HtmlRenderer {
             return true;
         }
         return false;
+    }
+
+    private discardRenderId(renderId: string) {
+        const renderItem = this.renderingMapping[renderId];
+        if (renderItem) {
+            delete this.renderingMapping[renderId];
+            // notified parent
+            if (this.parentRenderer) {
+                this.parentRenderer.discardRenderId(renderId);
+            }
+            // notified child
+            if (renderItem.type === RenderType.CHILD_PARSER && renderItem.renderer.parentRenderer === this) {
+                renderItem.renderer.discardRenderId(renderId);
+            }
+        }
     }
 
     afterContextUsed(callback: (renderId: string) => any) {

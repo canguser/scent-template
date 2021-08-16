@@ -26,7 +26,7 @@ export function waitNextFrame(args?: any) {
 
 export const ref = window.requestAnimationFrame;
 
-let uniqueInt = -9999999;
+let uniqueInt = 0;
 
 export function genUniqueId() {
     // return '_' + (Number(Math.random().toString().substr(3, 2)) + (Date.now() / 1000) + uniqueInt++).toString(36);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:c-for="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
@@ -9,7 +9,14 @@
 <div id="app">
     <p c-if="age > 21">{{name}}</p>
     <p>{{name}}</p>
-    <p c-for:school="schools">{{school}}</p>
+    <div c-for:school="schools">
+        <p c-if="school.year > 2008 && school.year <= 2012">初中： {{school.name}}</p>
+        <p c-if="school.year > 2012 && school.year <= 2015">高中： {{school.name}}</p>
+        <p c-if="school.year > 2015">大学： {{school.name}}</p>
+    </div>
+    <p c-for:n="numbers">
+        {{n}}
+    </p>
 </div>
 </body>
 <script src="demo-01.js"></script>

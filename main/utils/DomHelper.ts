@@ -32,3 +32,9 @@ export function removeAttribute(ele, prefix) {
         }
     }
 }
+
+export function unmountDom(dom) {
+    if (dom && dom.parentElement) {
+        dom.parentElement.removeChild(dom);
+    }
+}
