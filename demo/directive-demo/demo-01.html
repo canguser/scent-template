@@ -11,8 +11,8 @@
     <p>{{name}}</p>
     <div c-for:school="schools">
         <p c-if="school.year > 2008 && school.year <= 2012">初中： {{school.name}}</p>
-        <p c-if="school.year > 2012 && school.year <= 2015">高中： {{school.name}}</p>
-        <p c-if="school.year > 2015">大学： {{school.name}}</p>
+        <p c-if="school.year > 2012 && school.year <= 2015" c-bind:title="school.name">高中： {{school.name}}</p>
+        <p c-if="school.year > 2015" c-on:click="onclick">大学： {{school.name}}</p>
     </div>
     <p c-for:n="numbers">
         {{n}}

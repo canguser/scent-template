@@ -2,11 +2,14 @@ import { ExpressionRaw } from '../interface/normal.interface';
 
 export function execExpression(expression = '', context = {}) {
     // console.log('parse expression', expression);
+    if (!expression || !expression.trim()) {
+        return undefined;
+    }
     try {
         return new Function('context', `with(context){return (${expression})}`)(context);
     } catch (e) {
         console.warn('there\'s some un-except expression: ' + expression, e);
-        return null;
+        return undefined;
     }
 }
 

@@ -1,39 +1,7 @@
 const { HtmlRenderer, reactContext } = window.scent.template;
 
 const renderer = new HtmlRenderer({
-    element: '#app',
-    directives: [
-        {
-            name: 'if',
-            isScoped: true,
-            defineTemplates(template, params) {
-                if (!params.result) {
-                    return {};
-                }
-                return {
-                    ...template.from(0)
-                };
-            },
-            render({ params, target, trans = {} }) {
-            }
-        },
-        {
-            name: 'for',
-            isScoped: true,
-            defineTemplates(template, params) {
-                return (params.result || []).reduce(
-                    (r, item, i, list) => {
-                        Object.assign(r, template.from(i, {
-                            get [params.attributeValue]() {
-                                return list[i];
-                            }
-                        }));
-                        return r;
-                    }, {}
-                );
-            }
-        }
-    ]
+    element: '#app'
 });
 
 const context = reactContext(renderer, {
@@ -58,7 +26,10 @@ const context = reactContext(renderer, {
             year: 2016
         }
     ],
-    numbers: [1, 2, 3, 4, 5, 6]
+    numbers: [1, 2, 3, 4, 5, 6],
+    onclick() {
+        this.numbers.push(this.numbers.length);
+    }
 });
 
 renderer.afterRendered(() => {
@@ -69,31 +40,3 @@ renderer.afterRendered(() => {
 // renderer.renderAll();
 
 renderer.renderAll().then(() => renderer.mount());
-
-
-const ifd = {
-
-    isScoped: true,
-
-    defineTemplate(
-        {
-            value,
-            attribute,
-            scopeTemplate
-        }
-    ) {
-        return [
-            scopeTemplate.from(0, {})
-        ];
-    },
-
-    defineScopes(
-        {
-            value,
-            attribute
-        }
-    ) {
-    }
-
-};
-

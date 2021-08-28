@@ -21,38 +21,51 @@ export interface RenderItem {
 }
 
 export interface DirectiveHookParams {
-    target: Element,
-    params: DirectiveResultParams,
-    scopedRenderers: HtmlRenderer[]
+    renderId?: string
+    target?: Element,
+    details: DirectiveDetails,
     trans: any
 }
 
 export interface Directive {
-    created?: () => void
     afterMounted?: () => void
     beforeRendered?: (dom) => void
     afterRendered?: (dom) => void
+
     name: string,
 
     isScoped?: boolean,
 
-    render?(params: DirectiveHookParams)
+    alias?: string,
 
+    created?(...params: any[]): void
 
-    defineScopes?(params: DirectiveResultParams): any
+    destroyed?(...params: any[]): void
 
-    defineTemplates?(template: ScopeTemplate, params: DirectiveResultParams): { [key: string]: HtmlRenderer }
+    render?(params: DirectiveHookParams): void
+
+    defineScopes?(details: DirectiveDetails): any
+
+    defineTemplates?(template: ScopeTemplate, details: DirectiveDetails): { [key: string]: HtmlRenderer }
 }
 
-export interface DirectiveParams {
+export interface DirectiveDetails {
     key: string,
     attribute?: string,
     expression: string
+
+    getDynamicResult?(): DirectiveDetailsResult
 }
 
-export interface DirectiveResultParams extends DirectiveParams {
+export interface DirectiveResultParams extends DirectiveDetails {
     attributeValue?: string,
     result: any
+}
+
+export interface DirectiveDetailsResult {
+    key?: string
+    attributeValue?: any,
+    result?: any
 }
 
 export interface DirectiveArgs {

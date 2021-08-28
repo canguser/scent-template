@@ -1,24 +1,20 @@
 import { execExpression, getBindingExpressions } from '../utils/ExpressionHelper';
 import {
     Directive,
+    DirectiveDetails,
+    DirectiveDetailsResult,
     DirectiveHookParams,
-    DirectiveParams,
     DirectiveResultParams,
     RenderItem,
     RenderType,
     ScopeTemplate
 } from '../interface/normal.interface';
+import * as PresetDirectives from '../directives/PresetDirectives';
 import { ergodicTree, genStrategyMapper, genUniqueId, waitImmediately, waitNextFrame } from '../utils/NormalUtils';
 import { removeAttribute, replaceCommonNode, unmountDom } from '../utils/DomHelper';
+import { HooksInstance } from '../utils/HooksUtils';
 
 type RenderSingleText = (textNode: Text) => void
-
-type RenderDelayCallback = (
-    {
-        renderSingleText
-    }: {
-        renderSingleText: RenderSingleText
-    }) => void
 
 export interface RendererOption {
     element?: Element | string,
@@ -40,6 +36,8 @@ const defaultDirective: Directive = {
     name: '',
     created() {
     },
+    destroyed() {
+    },
     beforeRendered() {
     },
     afterRendered() {
@@ -47,7 +45,6 @@ const defaultDirective: Directive = {
     render(params: DirectiveHookParams): void {
     },
     defineScopes(params) {
-        // console.log(dom, params);
     },
     defineTemplates(template: ScopeTemplate, params: DirectiveResultParams): { [p: string]: HtmlRenderer } {
         return {
@@ -56,14 +53,22 @@ const defaultDirective: Directive = {
     }
 };
 
-export class HtmlRenderer {
+export enum RendererHooks {
+    BeforeContextUsed = 'BeforeContextUsed',
+    AfterContextUsed = 'AfterContextUsed',
+    AfterRendered = 'AfterRendered',
+    BeforeRendered = 'BeforeRendered',
+    BeforeMounted = 'BeforeMounted',
+    AfterMounted = 'AfterMounted',
+    BeforeUnmounted = 'BeforeUnmounted',
+    AfterUnmounted = 'AfterUnmounted',
+    BeforeDestroyed = 'BeforeDestroyed',
+    AfterDestroyed = 'AfterDestroyed',
+}
+
+export class HtmlRenderer extends HooksInstance {
 
     private renderingMapping: { [renderId: string]: RenderItem } = Object.create(null);
-
-    private afterContextUsedCallbackList: Array<(renderId: string) => any> = [];
-    private afterRenderedCallbackList: Array<() => any | void> = [];
-
-    private beforeRenderedCallbackList: Array<() => any | void> = [];
 
     private renderIdDelayQueue: Array<string> = [];
     private renderDelayCallbackMapping: { [renderId: string]: () => any } = Object.create(null);
@@ -71,35 +76,34 @@ export class HtmlRenderer {
     private renderIdSyncQueue: Array<string> = [];
     private renderSyncCallbackMapping: { [renderId: string]: () => any } = Object.create(null);
 
-    private nextTicksCallbackList: Array<(v?: any) => any | void> = [];
-
     private _context: any = {};
     private directives: Directive[] = [];
     private options: any = {};
     private scopedNodes = [];
 
     private element: Element; // data result element
-    private originElement: Element; // template element
+    private templateElement: Element; // template element
     private mountedElement: Element; // mounted element
 
     private hasBeginRendering: boolean = false;
 
     constructor(options: RendererOption = {}) {
+        super();
         const { element, context, directives, mount } = this.options = {
             ...getDefaultOptions(),
             ...options
         };
         if (typeof element === 'string') {
-            this.originElement = this.mountedElement = document.querySelector(element);
+            this.templateElement = this.mountedElement = document.querySelector(element);
         } else {
-            this.originElement = this.mountedElement = element;
+            this.templateElement = this.mountedElement = element;
         }
-        this.element = this.originElement.cloneNode(true) as Element;
+        this.element = this.templateElement.cloneNode(true) as Element;
         if (mount) {
             this.mountedElement = mount as Element;
         }
         this.context = context;
-        this.directives = directives;
+        this.directives = [...Object.values(PresetDirectives), ...directives];
     }
 
     public renderAll(force = false) {
@@ -107,7 +111,7 @@ export class HtmlRenderer {
             Object.keys(this.renderingMapping).forEach((renderId) => {
                 this.discardRenderId(renderId);
             });
-            this.element = this.originElement.cloneNode(true) as Element;
+            this.element = this.templateElement.cloneNode(true) as Element;
             this.hasBeginRendering = false;
         }
         if (!this.hasBeginRendering) {
@@ -195,15 +199,23 @@ export class HtmlRenderer {
         if (!this.mountedElement.parentElement) {
             return;
         }
+        this.dispatchHooks(RendererHooks.BeforeMounted);
         this.mountedElement.parentElement.replaceChild(this.element, this.mountedElement);
+        this.dispatchHooks(RendererHooks.AfterMounted);
     }
 
     public unmount(all = false) {
+        this.dispatchHooks(RendererHooks.BeforeUnmounted);
         if (all) {
+            this.dispatchHooks(RendererHooks.BeforeDestroyed);
             unmountDom(this.mountedElement);
             unmountDom(this.element);
         } else if (this.mountedElement && this.element.parentElement) {
             this.element.parentElement.replaceChild(this.mountedElement, this.element);
+        }
+        this.dispatchHooks(RendererHooks.AfterUnmounted);
+        if (all) {
+            this.dispatchHooks(RendererHooks.AfterDestroyed);
         }
     }
 
@@ -268,7 +280,8 @@ export class HtmlRenderer {
 
     public nextTick(callback?: () => void) {
         return new Promise<any>(resolve => {
-            this.nextTicksCallbackList.push(callback, resolve);
+            this.registerHooks(RendererHooks.AfterRendered, callback, { once: true });
+            this.registerHooks(RendererHooks.AfterRendered, resolve, { once: true });
         });
     }
 
@@ -280,12 +293,21 @@ export class HtmlRenderer {
             const [realName, attribute] = directiveName.split(':');
             const directive = this.getMatchedDirective(realName.replace(/^c-/, ''));
             if (directive) {
-                const params = {
+                const details: DirectiveDetails = {
                     key: realName,
                     attribute,
-                    expression: ele.getAttribute(directiveName)
+                    expression: ele.getAttribute(directiveName),
+                    getDynamicResult: () => this.getDirectiveResultParams(details)
                 };
+
+                const params: DirectiveHookParams = {
+                    trans: {},
+                    target: ele,
+                    details
+                };
+
                 if (directive.isScoped && ele !== this.element) {
+                    // inner scoped
                     this.scopedNodes.push(ele);
                     const commentNode = replaceCommonNode(ele, 'scoped');
                     // prevent scoped node going next
@@ -294,9 +316,14 @@ export class HtmlRenderer {
                     targetRenderer.renderAll();
                     return;
                 } else if (directive.isScoped) {
+                    // host scoped
                     this.scopedNodes.push(ele);
+                    let preventRender = false;
+                    directive.created(this.context, params, () => preventRender = true);
                     return [this.renderDirective(ele, directive, params)];
                 }
+                let preventRender = false;
+                directive.created(this.context, params, () => preventRender = true);
                 directiveInfos.push({
                     directive,
                     params
@@ -332,11 +359,7 @@ export class HtmlRenderer {
     public render(): void | Promise<void> {
         if (this.hasDelayRenders) {
             // call before hooks
-            this.beforeRenderedCallbackList.forEach(
-                callback => {
-                    callback.call(this);
-                }
-            );
+            this.dispatchHooks(RendererHooks.BeforeRendered);
 
             if (this.hasSyncRenders) {
                 this.emitSyncRendersQueue();
@@ -394,34 +417,31 @@ export class HtmlRenderer {
 
     emitAfterRendered() {
         // call after hooks
-        this.afterRenderedCallbackList.forEach(
-            callback => {
-                callback.call(this);
-            }
-        );
-
-        // call next tick
-        this.nextTicksCallbackList.forEach(
-            callback => {
-                if (typeof callback === 'function') {
-                    callback.call(this);
-                }
-            }
-        );
-
-        this.nextTicksCallbackList = [];
+        this.dispatchHooks(RendererHooks.AfterRendered);
     }
 
     beforeRendered(callback: () => any | void) {
-        if (typeof callback === 'function') {
-            this.beforeRenderedCallbackList.push(callback);
-        }
+        this.registerHooks(RendererHooks.BeforeRendered, callback);
     }
 
     afterRendered(callback: () => any | void) {
-        if (typeof callback === 'function') {
-            this.afterRenderedCallbackList.push(callback);
-        }
+        this.registerHooks(RendererHooks.AfterRendered, callback);
+    }
+
+    beforeMounted(callback: () => any | void) {
+        this.registerHooks(RendererHooks.BeforeMounted, callback);
+    }
+
+    afterMounted(callback: () => any | void) {
+        this.registerHooks(RendererHooks.AfterMounted, callback);
+    }
+
+    beforeUnmounted(callback: () => any | void) {
+        this.registerHooks(RendererHooks.BeforeUnmounted, callback);
+    }
+
+    afterUnmounted(callback: () => any | void) {
+        this.registerHooks(RendererHooks.AfterUnmounted, callback);
     }
 
     private renderText(textNode: Text): RenderItem | void {
@@ -444,29 +464,34 @@ export class HtmlRenderer {
     }
 
 
-    private renderDirective(ele: Element, directive: Directive, params: DirectiveParams) {
+    private renderDirective(ele: Element, directive: Directive, params: DirectiveHookParams) {
         const renderId = genUniqueId();
-        const trans: any = {};
-        const renderItem = {
+        return {
             id: renderId,
             type: RenderType.DIRECTIVE,
             target: ele,
             renderer: this,
             directive,
             data: {
-                params, trans
+                ...params,
+                details: {
+                    ...params.details,
+                    getDynamicResult: () => {
+                        return this.useContext(payload => {
+                            payload(renderId);
+                            return this.getDirectiveResultParams(params.details);
+                        });
+                    }
+                }
             }
         };
-        // const preventSub: boolean | Promise<boolean> = directive.created.call(this.context, ele);
-        // todo - after render?
-        return renderItem;
     }
 
-    private getDirectiveResultParams(params: DirectiveParams) {
+    private getDirectiveResultParams(params: DirectiveDetails) {
         let { attribute = '', expression = '' } = params;
 
-        const resultParams: DirectiveResultParams = {
-            ...params,
+        const resultParams: DirectiveDetailsResult = {
+            key: params.key,
             attributeValue: attribute, result: undefined
         };
 
@@ -481,9 +506,8 @@ export class HtmlRenderer {
 
     private renderSingleDirective(renderId: string) {
         const renderItem = this.renderingMapping[renderId] || {};
-        const { id, type, directive, data: { params = {}, trans = {} } = {}, target } = renderItem as RenderItem || {};
-        directive.render.call(this.context, { target, params, trans });
-        return true;
+        const { id, type, directive, data: { details = {}, trans = {} } = {}, target } = renderItem as RenderItem || {};
+        directive.render.call(this.context, { target, details, trans });
     }
 
     private addRenderSyncQueue(renderId) {
@@ -543,36 +567,35 @@ export class HtmlRenderer {
 
     private beforeRenderSingleDirective(renderId: string) {
         const renderItem = this.renderingMapping[renderId];
-        const { directive, target, data: { params, trans, templatesMap = {}, mountedKeys = [] } } = renderItem;
-        const resultParams = this.getDirectiveResultParams(params);
-        this.emitContextUsed(renderId);
-        renderItem.data.params = resultParams;
+        const { directive, target, data: { details, templatesMap = {}, mountedKeys = [] } } = renderItem;
+        removeAttribute(target, details.key);
         if (directive.isScoped) {
             renderItem.data.templatesMap = templatesMap;
             renderItem.data.mountedKeys = mountedKeys;
-            removeAttribute(target, params.key);
-            const scopes = directive.defineScopes(resultParams);
-            const templates = directive.defineTemplates({
-                from: (key: any, context: any = {}) => {
-                    if (key in templatesMap) {
-                        return {
-                            [key]: templatesMap[key]
-                        };
-                    }
-                    const template = new HtmlRenderer({
-                        element: target,
-                        mount: document.createComment('scopeItem'),
-                        context
-                    });
-                    templatesMap[key] = template;
-                    return {
-                        [key]: template
-                    };
-                }
-            }, resultParams);
-            this.emitContextUsed(renderId);
-
-            // console.log(Object.keys(templates).length);
+            const [scopes, templates] = this.useContext(payload => {
+                payload(renderId);
+                return [
+                    directive.defineScopes(details),
+                    directive.defineTemplates({
+                        from: (key: any, context: any = {}) => {
+                            if (key in templatesMap) {
+                                return {
+                                    [key]: templatesMap[key]
+                                };
+                            }
+                            const template = new HtmlRenderer({
+                                element: target,
+                                mount: document.createComment('scopeItem'),
+                                context
+                            });
+                            templatesMap[key] = template;
+                            return {
+                                [key]: template
+                            };
+                        }
+                    }, details)
+                ];
+            });
 
             const keys = Object.keys(templates);
 
@@ -645,38 +668,71 @@ export class HtmlRenderer {
         return false;
     }
 
+    private emitBeforeContextUsed() {
+        if (this.parentRenderer) {
+            this.parentRenderer.emitBeforeContextUsed();
+        } else {
+            this.dispatchHooks(RendererHooks.BeforeContextUsed);
+        }
+    }
+
     private emitContextUsed(renderId: string) {
         if (this.parentRenderer) {
             this.parentRenderer.emitContextUsed(renderId);
         } else {
-            this.afterContextUsedCallbackList.forEach(
-                callback => {
-                    callback.call(this, renderId);
-                }
-            );
+            this.dispatchHooks(RendererHooks.AfterContextUsed, renderId);
         }
     }
 
-    private renderSingleText(renderId: string): boolean {
+    private useContext<T>(callback: (payload?: Function) => T, withoutNotification = false): T {
+        if (typeof callback === 'function') {
+            if (withoutNotification) {
+                return callback.call(this, () => undefined);
+            }
+            this.emitBeforeContextUsed();
+            let payload;
+            const result = callback.call(this, p => {
+                payload = p;
+            });
+            this.emitContextUsed(payload);
+            return result;
+        }
+    };
+
+    private renderSingleText(renderId: string) {
         if (renderId in this.renderingMapping && this.renderingMapping[renderId].type === RenderType.TEXT) {
             const renderItem = this.renderingMapping[renderId];
             const { data, target } = renderItem || {};
             if (target) {
                 const { raw, expressions } = data || {};
                 const copyRaw = [...raw];
-                expressions.forEach((expression, i) => {
-                    copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
-                });
+                this.useContext(
+                    payload => {
+                        expressions.forEach((expression, i) => {
+                            copyRaw.splice(i + 1, 0, execExpression(expression, this.context));
+                        });
+                        payload(renderId);
+                    }
+                );
                 target.textContent = copyRaw.join('');
             }
-            return true;
         }
-        return false;
+    }
+
+    private discardSingleDirective(renderId: string) {
+        const renderItem = this.renderingMapping[renderId];
+        if (renderItem && renderItem.type === RenderType.DIRECTIVE) {
+            const { target, data: { details, trans } } = renderItem;
+            renderItem.directive.destroyed({ target, details, trans });
+        }
     }
 
     private discardRenderId(renderId: string) {
         const renderItem = this.renderingMapping[renderId];
         if (renderItem) {
+            if (renderItem.type === RenderType.DIRECTIVE) {
+                this.discardSingleDirective(renderId);
+            }
             delete this.renderingMapping[renderId];
             // notified parent
             if (this.parentRenderer) {
@@ -690,9 +746,11 @@ export class HtmlRenderer {
     }
 
     afterContextUsed(callback: (renderId: string) => any) {
-        if (typeof callback === 'function') {
-            this.afterContextUsedCallbackList.push(callback);
-        }
+        this.registerHooks(RendererHooks.AfterContextUsed, callback);
+    }
+
+    beforeContextUsed(callback: (renderId: string) => any) {
+        this.registerHooks(RendererHooks.BeforeContextUsed, callback);
     }
 
 }

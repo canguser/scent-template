@@ -5,6 +5,10 @@ declare const window: { [key: string]: any };
 
 export function reactContext(component, context) {
 
+    component.beforeContextUsed(() => {
+        window.identityList = [];
+    });
+
     component.afterContextUsed(renderId => {
         // console.log('on single item rendered', component.getRenderItem(renderId));
         for (const p of window.identityList) {
