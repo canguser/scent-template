@@ -18,10 +18,37 @@ export function inDocument(node: Node) {
 
 export function replaceCommonNode(node, comment: string) {
     const commentNode = document.createComment(comment);
-    if (node.parentElement) {
-        node.parentElement.replaceChild(commentNode, node);
+    if (node.parentNode) {
+        node.parentNode.replaceChild(commentNode, node);
     }
     return commentNode;
+}
+
+export function replaceNode(node, newNode) {
+
+    if (Array.isArray(newNode)) {
+        return [...newNode].map(nn => replaceNode(node, nn)).flat(1);
+    }
+
+    if (Array.isArray(node)) {
+        const length = node.length;
+        for (let i = 0; i < node.length - 1; i++) {
+            unmountDom(node[i]);
+        }
+        return replaceNode(node[length - 1], newNode);
+    }
+
+    let resultNodes = [newNode];
+
+    if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+        resultNodes = [...newNode.childNodes];
+    }
+
+    if (node.parentNode) {
+        node.parentNode.replaceChild(newNode, node);
+    }
+
+    return resultNodes;
 }
 
 export function removeAttribute(ele, prefix) {
@@ -34,7 +61,19 @@ export function removeAttribute(ele, prefix) {
 }
 
 export function unmountDom(dom) {
-    if (dom && dom.parentElement) {
-        dom.parentElement.removeChild(dom);
+    if (dom && dom.parentNode) {
+        dom.parentNode.removeChild(dom);
     }
+}
+
+export function isTemplate(node) {
+    return node && node.nodeName === 'TEMPLATE';
+}
+
+export function isDocFragment(node) {
+    return node.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+}
+
+export function genDocFragment(nodes) {
+    const docFragment = document.createDocumentFragment();
 }

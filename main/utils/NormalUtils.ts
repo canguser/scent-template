@@ -46,15 +46,21 @@ export function genStrategyMapper(mapper = {}, defaultValue, ignoreCase = false)
 }
 
 export function ergodicTree<NodeType>(tree: NodeType, childProperty: string = 'childNodes', parentNode?: NodeType) {
-    return function(callback: (node: NodeType, parent: NodeType, preventDeeply: () => void) => void | Promise<void>) {
+    return function(callback: (node: NodeType, parent: NodeType, preventDeeply?: () => void, extraNodes?: (...nodes) => void) => void | Promise<void>) {
         let prevent = false;
-        const result = callback(tree, parentNode, () => {
-            prevent = true;
-        });
+        let extraNodes = [];
+        const result = callback(tree, parentNode,
+            () => {
+                prevent = true;
+            },
+            (...nodes) => {
+                extraNodes = nodes || [];
+            }
+        );
 
         function doAfter() {
             if (!prevent) {
-                const results = [...tree[childProperty]].map(node => ergodicTree(node, childProperty, tree)(callback));
+                const results = [...tree[childProperty], ...extraNodes].map(node => ergodicTree(node, childProperty, tree)(callback));
                 const promises = results.filter(r => r instanceof Promise);
                 if (promises.length > 0) {
                     return Promise.all(results);

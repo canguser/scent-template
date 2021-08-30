@@ -10,7 +10,7 @@ export const cIF: Directive = {
             return {};
         }
         return {
-            ...template.from(0)
+            ...template.from('if')
         };
     }
 };

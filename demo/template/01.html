@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../../dist/scent.template.js"></script>
+</head>
+<body>
+<div id="lll">
+<!--    scoped-->
+</div>
+<template id="app">
+    <template c-if="age>24">
+        <p>{{name}}</p>
+        <p>{{age}}</p>
+        <template c-for:num="numbers">
+            <p>{{num}}</p>
+        </template>
+    </template>
+</template>
+</body>
+<script>
+    const { HtmlRenderer, reactContext } = window.scent.template;
+
+    const renderer = new HtmlRenderer({
+        element: '#app',
+        // mount: '#lll'
+    });
+
+
+    const context = reactContext(renderer, {
+        name: 'ryan',
+        gender: 'male',
+        age: '25',
+        schools: [
+            {
+                name: '高平镇小学',
+                year: 2005
+            },
+            {
+                name: '高平镇中学',
+                year: 2010
+            },
+            {
+                name: '金雁中学',
+                year: 2014
+            },
+            {
+                name: '四川旅游学院',
+                year: 2016
+            }
+        ],
+        numbers: [1, 2, 3, 4, 5, 6],
+        onclick() {
+            this.numbers.push(this.numbers.length);
+        }
+    });
+
+    renderer.renderAll().then(() => renderer.mount());
+</script>
+</html>

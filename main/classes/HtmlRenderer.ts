@@ -11,7 +11,7 @@ import {
 } from '../interface/normal.interface';
 import * as PresetDirectives from '../directives/PresetDirectives';
 import { ergodicTree, genStrategyMapper, genUniqueId, waitImmediately, waitNextFrame } from '../utils/NormalUtils';
-import { removeAttribute, replaceCommonNode, unmountDom } from '../utils/DomHelper';
+import { isTemplate, removeAttribute, replaceCommonNode, replaceNode, unmountDom } from '../utils/DomHelper';
 import { HooksInstance } from '../utils/HooksUtils';
 
 type RenderSingleText = (textNode: Text) => void
@@ -20,7 +20,8 @@ export interface RendererOption {
     element?: Element | string,
     context?: any,
     directives?: Directive[],
-    mount?: Node
+    mount?: Node,
+    elements?: Element[] | string
 }
 
 function getDefaultOptions() {
@@ -83,24 +84,28 @@ export class HtmlRenderer extends HooksInstance {
 
     private element: Element; // data result element
     private templateElement: Element; // template element
-    private mountedElement: Element; // mounted element
+    private toOccupiedElement: Element; // to mounted element
+    private mountedElements: Element[]; // current mounted element
 
     private hasBeginRendering: boolean = false;
 
     constructor(options: RendererOption = {}) {
         super();
-        const { element, context, directives, mount } = this.options = {
+        let { element, context, directives, mount } = this.options = {
             ...getDefaultOptions(),
             ...options
         };
         if (typeof element === 'string') {
-            this.templateElement = this.mountedElement = document.querySelector(element);
+            this.templateElement = this.toOccupiedElement = document.querySelector(element);
         } else {
-            this.templateElement = this.mountedElement = element;
+            this.templateElement = this.toOccupiedElement = element;
         }
         this.element = this.templateElement.cloneNode(true) as Element;
+        if (typeof mount === 'string') {
+            mount = document.querySelector(mount);
+        }
         if (mount) {
-            this.mountedElement = mount as Element;
+            this.toOccupiedElement = mount as Element;
         }
         this.context = context;
         this.directives = [...Object.values(PresetDirectives), ...directives];
@@ -118,10 +123,15 @@ export class HtmlRenderer extends HooksInstance {
             this.hasBeginRendering = true;
             this.scopedNodes = [];
             ergodicTree(this.element)(
-                (node, parent, preventDeeply) => {
+                (node, parent, preventDeeply, extraNodes) => {
                     this.renderNode(node);
                     if (this.scopedNodes.includes(node)) {
                         preventDeeply();
+                    }
+                    if (isTemplate(node)) {
+                        const contentNode = node['content'];
+                        extraNodes(...[...contentNode.childNodes]);
+                        replaceNode(node, contentNode);
                     }
                 }
             );
@@ -194,32 +204,45 @@ export class HtmlRenderer extends HooksInstance {
             }
         }
         if (ele && ele !== this.element) {
-            this.mountedElement = ele;
+            this.toOccupiedElement = ele;
         }
-        if (!this.mountedElement.parentElement) {
+        if (!this.toOccupiedElement.parentNode) {
             return;
         }
         this.dispatchHooks(RendererHooks.BeforeMounted);
-        this.mountedElement.parentElement.replaceChild(this.element, this.mountedElement);
+        let element = this.element;
+        if (isTemplate(this.element)) {
+            element = this.element['content'];
+        }
+        this.mountedElements = replaceNode(this.toOccupiedElement, element);
         this.dispatchHooks(RendererHooks.AfterMounted);
     }
 
     public unmount(all = false) {
         this.dispatchHooks(RendererHooks.BeforeUnmounted);
+        if (isTemplate(this.element)) {
+            const parent = this.mountedElements?.[0]?.parentNode;
+            const mountedElements = [...this.mountedElements || []];
+            if (parent) {
+                this.mountedElements = replaceNode(this.mountedElements, this.toOccupiedElement);
+            }
+            this.element['content'].append(...mountedElements);
+        } else if (this.toOccupiedElement && this.mountedElements?.[0]?.parentNode) {
+            this.mountedElements = replaceNode(this.mountedElements, this.toOccupiedElement);
+        }
         if (all) {
-            this.dispatchHooks(RendererHooks.BeforeDestroyed);
-            unmountDom(this.mountedElement);
             unmountDom(this.element);
-        } else if (this.mountedElement && this.element.parentElement) {
-            this.element.parentElement.replaceChild(this.mountedElement, this.element);
+            unmountDom(this.mountedElements);
+            unmountDom(this.toOccupiedElement);
         }
         this.dispatchHooks(RendererHooks.AfterUnmounted);
-        if (all) {
-            this.dispatchHooks(RendererHooks.AfterDestroyed);
-        }
     }
 
     public destroySelf() {
+        this.dispatchHooks(RendererHooks.BeforeDestroyed);
+        for (const renderer of this.childRendererMap.values()) {
+            renderer.destroySelf();
+        }
         this.unmount(true);
         Object.keys(this.renderingMapping).forEach(renderId => {
             this.discardRenderId(renderId);
@@ -228,6 +251,7 @@ export class HtmlRenderer extends HooksInstance {
         if (this.parentRenderer) {
             this.parentRenderer.tearChildParser(this);
         }
+        this.dispatchHooks(RendererHooks.AfterDestroyed);
     }
 
     public renderNode(node: Node) {
@@ -316,6 +340,9 @@ export class HtmlRenderer extends HooksInstance {
                     targetRenderer.renderAll();
                     return;
                 } else if (directive.isScoped) {
+                    if (!this.parentRenderer) {
+                        throw new Error('Can\'t using scoped directives in root element');
+                    }
                     // host scoped
                     this.scopedNodes.push(ele);
                     let preventRender = false;
@@ -460,7 +487,7 @@ export class HtmlRenderer extends HooksInstance {
     }
 
     get isMounted() {
-        return !!this.element.parentElement;
+        return !!this.element.parentNode;
     }
 
 
@@ -601,7 +628,7 @@ export class HtmlRenderer extends HooksInstance {
 
             for (const mountedKey of mountedKeys) {
                 if (!keys.includes(mountedKey)) {
-                    // console.log(mountedKey, 'destroyed');
+                    console.log(mountedKey, 'destroyed');
                     templatesMap[mountedKey].destroySelf();
                     delete templatesMap[mountedKey];
                 }
@@ -611,11 +638,10 @@ export class HtmlRenderer extends HooksInstance {
 
             for (const [key, t] of Object.entries(templates)) {
                 if (!mountedKeys.includes(key)) {
-                    // console.log(key, 'init');
+                    console.log(key, 'init');
                     this.addChildRenderer(t);
-                    const mountDOM = t.mountedElement;
-                    this.mountedElement.parentElement.insertBefore(mountDOM, this.mountedElement);
-                    // t.mount();
+                    const mountDOM = t.toOccupiedElement;
+                    this.toOccupiedElement.parentNode.insertBefore(mountDOM, this.toOccupiedElement);
                     t.renderAll(true)
                         .then(() => {
                             setTimeout(() => {
