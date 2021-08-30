@@ -42,6 +42,7 @@ export const cBIND: Directive = {
         }
     }
 };
+
 export const cCLICK: Directive = {
     name: 'on',
     created(context, { target, details, trans }: DirectiveHookParams) {
@@ -59,6 +60,35 @@ export const cCLICK: Directive = {
         target.addEventListener(details.attribute, listener);
         trans.listener = listener;
         trans.event = details.attribute;
+    },
+    destroyed({ target, details, trans }: DirectiveHookParams): void {
+        console.log('destroyed', trans);
+        const { listener, event } = trans;
+        target.removeEventListener(event, listener);
+    }
+};
+
+export const cMODULE: Directive = {
+    name: 'model',
+    created(context, { target, details, trans }: DirectiveHookParams) {
+        if (!/^[_a-zA-Z$]+[_a-zA-Z$0-9]*$/.test(details.expression)) {
+            throw TypeError('c-model can only be a variable name');
+        }
+        const listener = execExpression(
+            `
+                (function($e){
+                    ${details.expression} = $e.target.value
+                })
+            `,
+            context
+        ).bind(context);
+        target.addEventListener(details.attribute || 'input', listener);
+        trans.listener = listener;
+        trans.event = details.attribute;
+    },
+    render({ target, details }: DirectiveHookParams): void {
+        const { result } = details.getDynamicResult() || {};
+        target['value'] = result;
     },
     destroyed({ target, details, trans }: DirectiveHookParams): void {
         console.log('destroyed', trans);
