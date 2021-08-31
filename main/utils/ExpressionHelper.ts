@@ -6,7 +6,12 @@ export function execExpression(expression = '', context = {}) {
         return undefined;
     }
     try {
-        return new Function('context', `with(context){return (${expression})}`)(context);
+        return new Function('context', `with(context){return (${expression})}`)(
+            new Proxy(context, {
+                has(target: {}, p: string | symbol): boolean {
+                    return true;
+                }
+            }));
     } catch (e) {
         console.warn('there\'s some un-except expression: ' + expression, e);
         return undefined;

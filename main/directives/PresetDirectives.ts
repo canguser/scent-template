@@ -77,7 +77,7 @@ export const cMODULE: Directive = {
         const listener = execExpression(
             `
                 (function($e){
-                    ${details.expression} = $e.target.value
+                    ${details.expression} = $e.path[0].value
                 })
             `,
             context

@@ -298,8 +298,10 @@ export class HtmlRenderer extends HooksInstance {
     }
 
     private renderSingleItemSync(renderId) {
-        this.emitBeforeItemRenders(renderId);
-        this.addRenderSyncQueue(renderId);
+        if (renderId in this.renderingMapping) {
+            this.emitBeforeItemRenders(renderId);
+            this.addRenderSyncQueue(renderId);
+        }
     }
 
     public nextTick(callback?: () => void) {
@@ -447,8 +449,9 @@ export class HtmlRenderer extends HooksInstance {
         this.dispatchHooks(RendererHooks.AfterRendered);
     }
 
-    beforeRendered(callback: () => any | void) {
-        this.registerHooks(RendererHooks.BeforeRendered, callback);
+    emitBeforeRendered() {
+        // call after hooks
+        this.dispatchHooks(RendererHooks.BeforeRendered);
     }
 
     afterRendered(callback: () => any | void) {
@@ -469,6 +472,14 @@ export class HtmlRenderer extends HooksInstance {
 
     afterUnmounted(callback: () => any | void) {
         this.registerHooks(RendererHooks.AfterUnmounted, callback);
+    }
+
+    beforeDestroyed(callback: () => any | void) {
+        this.registerHooks(RendererHooks.BeforeDestroyed, callback);
+    }
+
+    afterDestroyed(callback: () => any | void) {
+        this.registerHooks(RendererHooks.AfterDestroyed, callback);
     }
 
     private renderText(textNode: Text): RenderItem | void {
@@ -567,12 +578,14 @@ export class HtmlRenderer extends HooksInstance {
 
     public renderSingleItemDelay(renderId: string): void {
 
-        this.addRenderDelayQueue(renderId);
-        this.emitBeforeItemRenders(renderId);
-        // make render async
-        // using waitImmediately to wait all changes in this moment
-        waitImmediately(this)
-            .then(() => this.render());
+        if (renderId in this.renderingMapping) {
+            this.addRenderDelayQueue(renderId);
+            this.emitBeforeItemRenders(renderId);
+            // make render async
+            // using waitImmediately to wait all changes in this moment
+            waitImmediately(this)
+                .then(() => this.render());
+        }
 
     }
 

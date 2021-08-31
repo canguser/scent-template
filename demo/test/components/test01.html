@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../../../dist/scent.template.js"></script>
+    <script>
+        const { defineComponent } = window.scent.template;
+
+        defineComponent('my-input', {
+
+            props: ['value', 'label', 'type'],
+
+            render: () => `
+            <div>
+                <label>
+                    <p>{{label}}</p>
+                    <p>{{value}}</p>
+                    <input c-bind:type="type" c-model="value">
+                </label>
+            </div>
+        `
+
+        });
+
+        defineComponent('c-app', {
+            render: () => `<template>
+                              <p c-bind:value="value">{{value}}</p>
+                              <my-input label="测试" c-model="value" type="number"></my-input>
+                        </template>`
+        });
+
+    </script>
+</head>
+
+<body>
+<c-app/>
+</body>
+
+</html>
