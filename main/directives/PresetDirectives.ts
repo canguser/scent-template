@@ -87,8 +87,10 @@ export const cMODULE: Directive = {
         trans.event = details.attribute;
     },
     render({ target, details }: DirectiveHookParams): void {
-        const { result } = details.getDynamicResult() || {};
-        target['value'] = result;
+        if (target) {
+            const { result } = details.getDynamicResult() || {};
+            target.setAttribute('value', result);
+        }
     },
     destroyed({ target, details, trans }: DirectiveHookParams): void {
         console.log('destroyed', trans);

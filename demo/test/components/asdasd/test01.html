@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="../../../dist/scent.template.js"></script>
+    <script src="../../../../dist/scent.template.js"></script>
     <script>
         const { defineGlobal, importComponent } = window.scent.template;
 
-        defineGlobal(`<link rel="stylesheet" href="./common.css"/>`);
+        defineGlobal(`<link rel="stylesheet" href="../common.css"/>`);
 
-        importComponent('./app.html');
-
+        importComponent('http://localhost:8003/scent-template/demo/test/components/app.html');
 
     </script>
 </head>

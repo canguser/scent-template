@@ -1,0 +1,17 @@
+<template>
+    <p class="">{{value}}</p>
+    <input c-model="value">
+</template>
+
+<script>
+    defineComponent('c-input', {
+        props: ['value']
+    });
+</script>
+
+<style>
+    input {
+        padding: 5px;
+        color: blue;
+    }
+</style>
