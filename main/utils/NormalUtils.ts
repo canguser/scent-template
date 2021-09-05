@@ -24,7 +24,7 @@ export function waitNextFrame(args?: any) {
     });
 }
 
-export const ref = window.requestAnimationFrame;
+const ref = window.requestAnimationFrame;
 
 let uniqueInt = 0;
 

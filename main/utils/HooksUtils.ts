@@ -16,7 +16,7 @@ export class Hooks {
     }
 
     dispatch(...params: any[]) {
-        (this.hookCallbacks || [])
+        this.hookCallbacks = (this.hookCallbacks || [])
             .filter(
                 ({ callback, options }) => {
                     if (typeof callback === 'function') {
@@ -26,12 +26,6 @@ export class Hooks {
                     return false;
                 }
             );
-
-        for (const { callback, options } of this.hookCallbacks) {
-            if (typeof callback === 'function') {
-
-            }
-        }
     }
 
     register(callback: Callback, options: HooksRegisterOptions = {}) {

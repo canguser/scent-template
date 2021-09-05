@@ -651,7 +651,6 @@ export class HtmlRenderer extends HooksInstance {
 
             for (const [key, t] of Object.entries(templates)) {
                 if (!mountedKeys.includes(key)) {
-                    console.log(key, 'init');
                     this.addChildRenderer(t);
                     const mountDOM = t.toOccupiedElement;
                     this.toOccupiedElement.parentNode.insertBefore(mountDOM, this.toOccupiedElement);
