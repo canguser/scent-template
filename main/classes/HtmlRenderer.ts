@@ -8,7 +8,7 @@ import {
     RenderItem,
     RenderType,
     ScopeTemplate
-} from '../interface/normal.interface';
+} from '../interface/NormalInterface';
 import * as PresetDirectives from '../directives/PresetDirectives';
 import { ergodicTree, genStrategyMapper, genUniqueId, waitImmediately, waitNextFrame } from '../utils/NormalUtils';
 import { isTemplate, removeAttribute, replaceCommonNode, replaceNode, unmountDom } from '../utils/DomHelper';
@@ -60,6 +60,8 @@ export enum RendererHooks {
     AfterRendered = 'AfterRendered',
     BeforeRendered = 'BeforeRendered',
     BeforeMounted = 'BeforeMounted',
+    BeforeItemRendered = 'BeforeItemRendered',
+    AfterItemRendered = 'AfterItemRendered',
     AfterMounted = 'AfterMounted',
     BeforeUnmounted = 'BeforeUnmounted',
     AfterUnmounted = 'AfterUnmounted',
@@ -290,6 +292,8 @@ export class HtmlRenderer extends HooksInstance {
             }, isAsync);
         }
 
+        this.dispatchHooks(RendererHooks.BeforeItemRendered, item.id);
+
         if (isAsync) {
             this.renderSingleItemDelay(item.id);
         } else {
@@ -456,6 +460,14 @@ export class HtmlRenderer extends HooksInstance {
 
     afterRendered(callback: () => any | void) {
         this.registerHooks(RendererHooks.AfterRendered, callback);
+    }
+
+    beforeItemRendered(callback: (renderId) => any | void) {
+        this.registerHooks(RendererHooks.BeforeItemRendered, callback);
+    }
+
+    afterItemRendered(callback: (renderId) => any | void) {
+        this.registerHooks(RendererHooks.AfterItemRendered, callback);
     }
 
     beforeMounted(callback: () => any | void) {
@@ -633,7 +645,10 @@ export class HtmlRenderer extends HooksInstance {
                                 [key]: template
                             };
                         }
-                    }, details)
+                    }, {
+                        ...details,
+                        getDynamicResult: () => this.getDirectiveResultParams(details)
+                    })
                 ];
             });
 
@@ -689,10 +704,9 @@ export class HtmlRenderer extends HooksInstance {
                 [RenderType.DIRECTIVE]: () => this.renderSingleDirective(renderId),
                 [RenderType.CHILD_PARSER]: () => this.renderChildParser(renderId)
             }, () => undefined);
-            if (mapper[type]()) {
-                this.emitContextUsed(renderItem.id);
-            }
+            mapper[type]();
         }
+        this.dispatchHooks(RendererHooks.AfterItemRendered, renderId);
     }
 
     private renderChildParser(renderId: string): boolean {

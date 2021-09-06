@@ -1,4 +1,4 @@
-import { ExpressionRaw } from '../interface/normal.interface';
+import { ExpressionRaw } from '../interface/NormalInterface';
 
 export function execExpression(expression = '', context = {}) {
     // console.log('parse expression', expression);

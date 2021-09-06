@@ -1,4 +1,4 @@
-import { Directive, DirectiveHookParams } from '../interface/normal.interface';
+import { Directive, DirectiveHookParams } from '../interface/NormalInterface';
 import { execExpression } from '../utils/ExpressionHelper';
 
 export const cIF: Directive = {
@@ -21,10 +21,11 @@ export const cFOR: Directive = {
     defineTemplates(template, details) {
         const params = details.getDynamicResult();
         return (params.result || []).reduce(
-            (r, item, i, list) => {
+            (r, item, i) => {
                 Object.assign(r, template.from(i, {
                     get [params.attributeValue]() {
-                        return list[i];
+                        const res = details.getDynamicResult();
+                        return res.result[i];
                     }
                 }));
                 return r;

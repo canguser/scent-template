@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
-    "sourceMap": true
+    "module": "esnext",
+    "target": "es6",
+    "moduleResolution": "Node"
   },
   "exclude": [
     "node_modules"

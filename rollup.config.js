@@ -1,10 +1,10 @@
 import resolve from '@rollup/plugin-node-resolve';
 import nodePolyfills from 'rollup-plugin-node-polyfills';
 import commonjs from '@rollup/plugin-commonjs';
-import babel from "@rollup/plugin-babel";
-import {terser} from 'rollup-plugin-terser';
+import { terser } from 'rollup-plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 
-const {NODE_ENV = 'normal'} = process.env;
+const { NODE_ENV = 'normal' } = process.env;
 const pkg = require('./package') || {};
 const {
     main = 'dist/index.js',
@@ -16,7 +16,6 @@ const {
 
 const isESM = ['esm', 'esm5'].includes(NODE_ENV);
 const isProd = ['prod'].includes(NODE_ENV);
-const usingBabel = ['prod', 'normal', 'esm5'].includes(NODE_ENV);
 const extensions = ['.js', '.ts'];
 
 const fileMapper = {
@@ -34,19 +33,13 @@ export default {
         name: libName
     },
     plugins: [
+        typescript(),
         nodePolyfills(),
         resolve({
-            extensions,
+            extensions
             // modulesOnly: true
         }),
         commonjs(),
-        ...usingBabel ? [babel(
-            {
-                exclude: 'node_modules/**', // 防止打包node_modules下的文件
-                babelHelpers: 'runtime',       // 使plugin-transform-runtime生效
-                extensions
-            }
-        )] : [],
         ...isProd ? [terser()] : []
     ]
-}
+};
