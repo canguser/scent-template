@@ -77,3 +77,9 @@ export function isDocFragment(node) {
 export function genDocFragment(nodes) {
     const docFragment = document.createDocumentFragment();
 }
+
+export function replaceDom(origin, newDom) {
+    if (origin.parentNode) {
+        origin.parentNode.replaceChild(newDom, origin);
+    }
+}

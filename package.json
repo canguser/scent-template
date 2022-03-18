@@ -33,6 +33,9 @@
     "LICENSE",
     "package.json"
   ],
+  "dependencies": {
+    "@rapidly/utils": "^2.0.0-beta3"
+  },
   "types": "types/index.d.ts",
   "devDependencies": {
   },
