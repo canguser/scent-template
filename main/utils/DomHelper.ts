@@ -1,9 +1,9 @@
 export function getAllElements(ele: Element): Element[] {
-    return [ele].concat([...(ele.children || [])].map(e => getAllElements(e)).flat());
+    return [ele].concat([...(ele.children || [])].map((e) => getAllElements(e)).flat());
 }
 
 export function getAllNodes(ele: Element): Node[] {
-    return ([ele] as Node[]).concat([...(ele.childNodes || [])].map(e => getAllNodes(e as Element)).flat());
+    return ([ele] as Node[]).concat([...(ele.childNodes || [])].map((e) => getAllNodes(e as Element)).flat());
 }
 
 export function inDocument(node: Node) {
@@ -24,10 +24,9 @@ export function replaceCommonNode(node, comment: string) {
     return commentNode;
 }
 
-export function replaceNode(node, newNode) {
-
+export function replaceNode(node, newNode, parentNode?: Node) {
     if (Array.isArray(newNode)) {
-        return [...newNode].map(nn => replaceNode(node, nn)).flat(1);
+        return [...newNode].map((nn) => replaceNode(node, nn, parentNode)).flat(1);
     }
 
     if (Array.isArray(node)) {
@@ -35,20 +34,18 @@ export function replaceNode(node, newNode) {
         for (let i = 0; i < node.length - 1; i++) {
             unmountDom(node[i]);
         }
-        return replaceNode(node[length - 1], newNode);
+        return replaceNode(node[length - 1], newNode, parentNode);
     }
 
-    let resultNodes = [newNode];
-
-    if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-        resultNodes = [...newNode.childNodes];
+    if (node && node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+        node.append(newNode);
     }
 
-    if (node.parentNode) {
+    if (node && node.parentNode) {
         node.parentNode.replaceChild(newNode, node);
+    } else if (parentNode) {
+        parentNode.appendChild(newNode);
     }
-
-    return resultNodes;
 }
 
 export function removeAttribute(ele, prefix) {

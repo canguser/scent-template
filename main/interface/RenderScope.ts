@@ -1,11 +1,9 @@
-export interface RenderScope{
-
+export interface RenderScope<T = any> {
     id?: string;
 
-    target: any
+    target: T;
 
-    expression: string
+    expression: string;
 
     render(context: object): void;
-
 }
