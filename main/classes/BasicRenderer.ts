@@ -54,17 +54,21 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     }
 
     notifyBeforeSingleRender(id: string): void {
-        const watching = this.singleRenderWatchingMapping[id];
-        if (watching && typeof watching.before === 'function') {
-            watching.before(id);
-        }
+        Object.keys(this.singleRenderWatchingMapping).forEach((key) => {
+            const watching = this.singleRenderWatchingMapping[key];
+            if (watching && typeof watching.before === 'function') {
+                watching.before(id);
+            }
+        });
     }
 
     notifyAfterSingleRender(id: string): void {
-        const watching = this.singleRenderWatchingMapping[id];
-        if (watching && typeof watching.after === 'function') {
-            watching.after(id);
-        }
+        Object.keys(this.singleRenderWatchingMapping).forEach((key) => {
+            const watching = this.singleRenderWatchingMapping[key];
+            if (watching && typeof watching.after === 'function') {
+                watching.after(id);
+            }
+        });
     }
 
     watchSingleRender(before: (scopeId: string) => void, after: (scopeId: string) => void): string {

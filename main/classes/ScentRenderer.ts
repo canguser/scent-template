@@ -3,6 +3,7 @@ import { TextRenderScopeStrategy } from './TextRenderScope';
 import { BasicRenderer } from './BasicRenderer';
 import { replaceNode } from '../utils/DomHelper';
 import { ScopeType } from '../enum/ScopeType';
+import { ProxyAdaptor } from './ProxyAdaptor';
 
 const defaultOptions: any = {
     context: {},
@@ -14,6 +15,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
     originElements: Node[];
     hasMounted: boolean = false;
     renderScopeStrategies: TextRenderScopeStrategy[];
+    proxyAdaptor: ProxyAdaptor;
 
     constructor(options: any = {}) {
         super();
@@ -21,10 +23,16 @@ export class ScentRenderer extends BasicRenderer<Node> {
             template = undefined,
             context = undefined,
             renderScopeStrategies = [],
-            mount = undefined
+            mount = undefined,
+            adaptor = undefined
         } = { ...defaultOptions, ...options };
 
         this.renderScopeStrategies = renderScopeStrategies;
+
+        if (adaptor){
+            this.proxyAdaptor = adaptor;
+            adaptor.adapt(this);
+        }
 
         if (typeof mount === 'string') {
             mount = document.querySelector(mount);
