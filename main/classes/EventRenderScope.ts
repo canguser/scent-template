@@ -52,6 +52,9 @@ export class EventRenderScopeStrategy implements RenderScopeStrategy<Element> {
         const attributeNodes = Array.from(attributes).filter((attr) =>
             this.prefixList.some((prefix) => attr.name.startsWith(prefix))
         );
+        if (attributeNodes.length === 0) {
+            return false;
+        }
         // generate render scopes from attribute nodes
         const renderScopes = attributeNodes.map((attr) => {
             const expression = attr.value;
@@ -67,10 +70,6 @@ export class EventRenderScopeStrategy implements RenderScopeStrategy<Element> {
         // remove all related attributes from target
         attributeNodes.forEach((attr) => target.removeAttribute(attr.name));
 
-        if (renderScopes.length > 0) {
-            return renderScopes;
-        }
-
-        return false;
+        return renderScopes;
     }
 }
