@@ -4,10 +4,11 @@ import { BasicRenderer } from './BasicRenderer';
 import { replaceNode } from '../utils/DomHelper';
 import { ScopeType } from '../enum/ScopeType';
 import { ProxyAdaptor } from './ProxyAdaptor';
+import { EventRenderScopeStrategy } from './EventRenderScope';
 
 const defaultOptions: any = {
     context: {},
-    renderScopeStrategies: [new TextRenderScopeStrategy()]
+    renderScopeStrategies: [new TextRenderScopeStrategy(), new EventRenderScopeStrategy()]
 };
 
 export class ScentRenderer extends BasicRenderer<Node> {
@@ -29,7 +30,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         this.renderScopeStrategies = renderScopeStrategies;
 
-        if (adaptor){
+        if (adaptor) {
             this.proxyAdaptor = adaptor;
             adaptor.adapt(this);
         }
@@ -71,11 +72,18 @@ export class ScentRenderer extends BasicRenderer<Node> {
         ergodicTree(this.virtualElement)((node, parent, preventDeeply) => {
             let canGoDeep = true;
             for (let strategy of this.renderScopeStrategies) {
-                const result = strategy.match(node);
+                let result = strategy.match(node as Element);
                 if (result) {
-                    const scope = result;
-                    scope.id = genUniqueId();
-                    this.scopesMapper[scope.id] = scope;
+                    const scopes = [];
+                    if (!Array.isArray(result)) {
+                        scopes.push(result);
+                    } else {
+                        scopes.push(...result);
+                    }
+                    scopes.forEach((scope) => {
+                        scope.id = genUniqueId();
+                        this.scopesMapper[scope.id] = scope;
+                    });
                     if (strategy.type === ScopeType.Alienated) {
                         canGoDeep = false;
                     }
