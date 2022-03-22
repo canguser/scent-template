@@ -1,3 +1,5 @@
+import { RenderResult } from './RenderResult';
+
 export interface RenderScope<T = any> {
     id?: string;
 
@@ -5,5 +7,5 @@ export interface RenderScope<T = any> {
 
     expression: string;
 
-    render(context: object): void;
+    render(context: object): void | RenderResult;
 }

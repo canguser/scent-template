@@ -135,3 +135,7 @@ export function pathJoin(url: string, toPath: string | string[], split = '/') {
     }
     return url;
 }
+
+export function hasDuplicate(array) {
+    return array.some((item, index) => array.indexOf(item) !== index);
+}

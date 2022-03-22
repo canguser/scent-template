@@ -5,10 +5,16 @@ import { replaceNode } from '../utils/DomHelper';
 import { ScopeType } from '../enum/ScopeType';
 import { ProxyAdaptor } from './ProxyAdaptor';
 import { EventRenderScopeStrategy } from './EventRenderScope';
+import { SubRendererParam } from '../interface/SubRendererParam';
+import { IteratedRenderScopeStrategy } from './IteratedRenderScope';
 
 const defaultOptions: any = {
     context: {},
-    renderScopeStrategies: [new TextRenderScopeStrategy(), new EventRenderScopeStrategy()]
+    renderScopeStrategies: [
+        new IteratedRenderScopeStrategy(),
+        new TextRenderScopeStrategy(),
+        new EventRenderScopeStrategy()
+    ]
 };
 
 export class ScentRenderer extends BasicRenderer<Node> {
@@ -17,6 +23,8 @@ export class ScentRenderer extends BasicRenderer<Node> {
     hasMounted: boolean = false;
     renderScopeStrategies: TextRenderScopeStrategy[];
     proxyAdaptor: ProxyAdaptor;
+    replaceMounted: boolean = false;
+    targetPlaceholderMapping = new Map<Node, Node>();
 
     constructor(options: any = {}) {
         super();
@@ -25,10 +33,13 @@ export class ScentRenderer extends BasicRenderer<Node> {
             context = undefined,
             renderScopeStrategies = [],
             mount = undefined,
-            adaptor = undefined
+            adaptor = undefined,
+            autoMounted = true,
+            replaceMounted = false
         } = { ...defaultOptions, ...options };
 
         this.renderScopeStrategies = renderScopeStrategies;
+        this.replaceMounted = replaceMounted;
 
         if (adaptor) {
             this.proxyAdaptor = adaptor;
@@ -55,13 +66,11 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         this.context = context;
 
-        this.init();
-    }
-
-    init() {
         this.compile();
         this.render();
-        this.mount();
+        if (autoMounted) {
+            this.mount();
+        }
     }
 
     compile(): void {
@@ -84,8 +93,11 @@ export class ScentRenderer extends BasicRenderer<Node> {
                         scope.id = genUniqueId();
                         this.scopesMapper[scope.id] = scope;
                     });
-                    if (strategy.type === ScopeType.Alienated) {
+                    if ([ScopeType.Alienated, ScopeType.Alienated_UNIQUE].includes(strategy.type)) {
                         canGoDeep = false;
+                    }
+                    if (strategy.type === ScopeType.Alienated_UNIQUE) {
+                        break;
                     }
                 }
             }
@@ -99,11 +111,13 @@ export class ScentRenderer extends BasicRenderer<Node> {
         if (!this.hasMounted) {
             return;
         }
-        this.children.forEach((child) => {
-            child.unmount();
-        });
-        replaceNode(this.virtualElement, [...this.realElement.childNodes]);
-        replaceNode([...this.realElement.childNodes], this.originElements, this.realElement);
+        if (!this.replaceMounted) {
+            replaceNode(this.virtualElement, [...this.realElement.childNodes]);
+            replaceNode([...this.realElement.childNodes], this.originElements, this.realElement);
+        } else {
+            replaceNode(this.originElements, this.realElement);
+            (this.virtualElement as DocumentFragment).append(...this.originElements);
+        }
         this.hasMounted = false;
     }
 
@@ -112,12 +126,55 @@ export class ScentRenderer extends BasicRenderer<Node> {
             return;
         }
         this.realElement = target || this.realElement;
-        // copy realElement to originElement & clear all children
-        this.originElements = [...this.realElement.childNodes];
-        replaceNode(this.originElements, this.virtualElement, this.realElement);
-        this.children.forEach((child) => {
-            child.mount();
-        });
+        if (!this.replaceMounted) {
+            // copy realElement to originElement & clear all children
+            this.originElements = [...this.realElement.childNodes];
+            replaceNode(this.originElements, this.virtualElement, this.realElement);
+        } else {
+            this.originElements = [...this.virtualElement.childNodes];
+            replaceNode(this.realElement, this.virtualElement);
+        }
         this.hasMounted = true;
+    }
+
+    checkToReplaceSubRenderers(renderId: string, target: Node, replaceParent: boolean): void {
+        const subRenderers = this.renderIdChildrenMapping[renderId] || [];
+        const noPlacedElements = (subRenderers as ScentRenderer[])
+            .filter((subRenderer) => !subRenderer.realElement.parentNode && !subRenderer.hasMounted)
+            .map((subRenderer) => {
+                return subRenderer.realElement;
+            });
+        if (replaceParent) {
+            let placeholder = this.targetPlaceholderMapping.get(target);
+            if (!placeholder) {
+                placeholder = document.createComment(`${renderId}-placeholder`);
+                replaceNode(target, placeholder);
+                this.targetPlaceholderMapping.set(target, placeholder);
+            }
+            replaceNode(placeholder, [...noPlacedElements, placeholder], placeholder.parentNode);
+        }
+        // filter subRenderers are not mounted
+        (subRenderers as ScentRenderer[])
+            .filter((subRenderer) => {
+                return !subRenderer.hasMounted;
+            })
+            .forEach((subRenderer) => {
+                subRenderer.mount();
+            });
+    }
+
+    genSubRenderer(param: SubRendererParam, target: Node | undefined): ScentRenderer {
+        const realElement = document.createComment('--sub-renderers--');
+        if (target) {
+            target.appendChild(realElement);
+        }
+        return new ScentRenderer({
+            template: param.template,
+            context: param.context,
+            renderScopeStrategies: this.renderScopeStrategies,
+            mount: realElement,
+            autoMounted: false,
+            replaceMounted: true
+        });
     }
 }

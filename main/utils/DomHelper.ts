@@ -48,6 +48,12 @@ export function replaceNode(node, newNode, parentNode?: Node) {
     }
 }
 
+export function removeAllChildren(node: Node) {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild);
+    }
+}
+
 export function removeAttribute(ele, prefix) {
     const attributes = ele.getAttributeNames();
     for (const key of attributes) {
@@ -79,4 +85,12 @@ export function replaceDom(origin, newDom) {
     if (origin.parentNode) {
         origin.parentNode.replaceChild(newDom, origin);
     }
+}
+
+export function getAttributeNodes(ele: Element, prefixList) {
+    const attributes = ele.attributes || [];
+    // get all attributes nodes match prefix
+    return Array.from(attributes).filter((attr) =>
+        prefixList.some((prefix) => attr.name.startsWith(prefix))
+    );
 }

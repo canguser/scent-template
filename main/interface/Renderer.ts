@@ -13,6 +13,10 @@ export interface Renderer<T = any> {
 
     children: Renderer<T>[];
 
+    identity: any;
+
+    parentRenderId: string;
+
     /**
      * render visual element from context & scopes
      */
@@ -32,6 +36,14 @@ export interface Renderer<T = any> {
      * generate new scopes from visual element
      */
     compile(): void;
+
+    destroy(): void;
+
+    linkParent(parent: Renderer<T>, identity: any, parentRenderId: string): void;
+
+    unlinkParent(): void;
+
+    unlinkChild(renderId: string, identity: any): void;
 
     renderById(id: string): void;
 

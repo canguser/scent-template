@@ -1,4 +1,5 @@
 export enum ScopeType {
     Inherited,
-    Alienated
+    Alienated,
+    Alienated_UNIQUE,
 }
