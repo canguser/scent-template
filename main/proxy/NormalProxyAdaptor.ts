@@ -22,7 +22,7 @@ export class NormalProxyAdaptor extends ProxyAdaptor {
     }
 
     startListenGetter(cb: (field: any) => void): void {
-        this.subscriber = subscribe('all', {
+        this.subscriber = subscribe(this.context, {
             get: (target, propertyChain) => {
                 cb(propertyChain);
             }

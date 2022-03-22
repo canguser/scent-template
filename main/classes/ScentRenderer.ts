@@ -71,8 +71,8 @@ export class ScentRenderer extends BasicRenderer<Node> {
         this.context = context;
 
         this.compile();
-        this.render();
         if (autoMounted) {
+            this.render();
             this.mount();
         }
     }
@@ -165,6 +165,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
                 return !subRenderer.hasMounted;
             })
             .forEach((subRenderer) => {
+                subRenderer.render();
                 subRenderer.mount();
             });
     }

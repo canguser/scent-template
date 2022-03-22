@@ -44,7 +44,7 @@
                 </ul>
                 <div>
                     <h2>学校</h2>
-                    <p s-for:item="schools" @click="alert(item.id)" s-key="item.id">{item.name}</p>
+                    <p s-for:item="schools" @click="alert(item.id)" s-key="item.id" :title="item.name">{item.name}</p>
                 </div>
                 <button @click="age++">点击</button>
             </div>`,
@@ -56,8 +56,8 @@
 
     subscribe(obj, {
         set: (...args) => {
-            console.log(`args`, args);
-        }
+            console.log(`set args`, args);
+        },
     })
 </script>
 </html>

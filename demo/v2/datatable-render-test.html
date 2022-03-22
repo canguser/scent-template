@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../../dist/scent.template.js"></script>
+
+</head>
+<body>
+    <div id="test">
+        <p1>asd</p1>
+    </div>
+</body>
+<script>
+    const { ScentRenderer, NormalProxyAdaptor, react } = window.scent.template;
+    const obj = react({
+        title: 'Hello World',
+        content: 'This is a test',
+        age: 18,
+        rows: [],
+        time: 0,
+        addRow() {
+            console.log('addRow')
+            const time = obj.time == null ? (obj.time = 1) : ++obj.time
+            obj.rows.push(
+                ...Array.from({ length: 2 }).map((e, i) => {
+                    return {
+                        a: time + '' + i + 1,
+                        b: 'b' + i + time,
+                        c: 'c' + i + time,
+                        d: 'd' + i + time,
+                        e: 'e' + i + time,
+                        f: 'f' + i + time,
+                        g: 'g' + i + time,
+                        h: 'h' + i + time,
+                        i: 'i' + i + time,
+                        j: 'j' + i + time,
+                        k: 'k' + i + time
+                    }
+                })
+            )
+        },
+
+        addRow2() {
+            console.log('addRow2')
+            const time = obj.time == null ? (obj.time = 1) : ++obj.time
+            this.rows = [
+                ...this.rows,
+                ...Array.from({ length: 1000 }).map((e, i) => {
+                    return {
+                        a: time + i + 1,
+                        b: 'b' + i + time,
+                        c: 'c' + i + time,
+                        d: 'd' + i + time,
+                        e: 'e' + i + time,
+                        f: 'f' + i + time,
+                        g: 'g' + i + time,
+                        h: 'h' + i + time,
+                        i: 'i' + i + time,
+                        j: 'j' + i + time,
+                        k: 'k' + i
+                    }
+                })
+            ]
+        },
+        resetRows() {
+            obj.rows = []
+        }
+    })
+    const renderer = new ScentRenderer(
+        {
+            mount: '#test',
+            template: 
+            `
+                <div>
+                    <button @click="addRow">addRow</button>
+                    <button @click="addRow2">Add Row 2</button>
+                    <button @click="resetRows">Reset Row</button>
+                    <div class="lwc-datatable-test">
+                        <div class="slds-grid" s-for:row="rows" s-key="row.a">
+                            <p>{row.a}</p>
+                            <p>{row.b}</p>
+                            <p>{row.c}</p>
+                            <p>{row.d}</p>
+                            <p>{row.e}</p>
+                            <p>{row.f}</p>
+                            <p>{row.g}</p>
+                            <p>{row.h}</p>
+                            <p>{row.i}</p>
+                            <p>{row.j}</p>
+                            <p>{row.k}</p>
+                        </div>
+                    </div>
+                </div>
+            `,
+            context: obj,
+            adaptor: new NormalProxyAdaptor(obj)
+        }
+    );
+</script>
+</html>

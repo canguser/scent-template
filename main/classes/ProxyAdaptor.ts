@@ -48,7 +48,7 @@ export abstract class ProxyAdaptor {
         // waiting for all fields to be rendered
         this.toRenderFields.push(...fields);
         await debounce({ context: this, during: 0 });
-
+        console.time('render time');
         const allRenderFieldsUnique = [...new Set(this.toRenderFields)];
         // get all render ids by fields
         const renderIds = allRenderFieldsUnique.reduce((renderIds, field) => {
@@ -63,5 +63,6 @@ export abstract class ProxyAdaptor {
         renderIds.forEach((renderId) => {
             this.renderer.renderById(renderId);
         });
+        console.timeEnd('render time');
     }
 }
