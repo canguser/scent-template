@@ -1,4 +1,5 @@
 import { Renderer } from '../interface/Renderer';
+import { debounce } from '@rapidly/utils/lib/commom/async/debounce';
 
 export abstract class ProxyAdaptor {
     renderIdFieldsMapping = {};
@@ -44,10 +45,9 @@ export abstract class ProxyAdaptor {
     abstract stopListenGetter(): void;
 
     protected async renderByFields(fields: string[]) {
-
         // waiting for all fields to be rendered
         this.toRenderFields.push(...fields);
-        await Promise.resolve();
+        await debounce({ context: this, during: 0 });
 
         const allRenderFieldsUnique = [...new Set(this.toRenderFields)];
         // get all render ids by fields
