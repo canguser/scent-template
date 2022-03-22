@@ -1,3 +1,6 @@
+import { isBlank } from '@rapidly/utils/lib/commom/string/isBlank';
+import { isNotBlank } from '@rapidly/utils/lib/commom/string/isNotBlank';
+
 export function getAllElements(ele: Element): Element[] {
     return [ele].concat([...(ele.children || [])].map((e) => getAllElements(e)).flat());
 }
@@ -48,6 +51,41 @@ export function replaceNode(node, newNode, parentNode?: Node) {
     }
 }
 
+export function replaceNodes(nodes, newNodes, parentNode?: Node): void {
+    let node = nodes;
+    if (Array.isArray(nodes)) {
+        const length = nodes.length;
+        for (let i = 0; i < nodes.length - 1; i++) {
+            unmountDom(nodes[i]);
+        }
+        node = nodes[length - 1];
+    }
+    if (!node){
+        if (!parentNode){
+            return;
+        }
+        const newNodeList = Array.isArray(newNodes) ? newNodes : [newNodes];
+        newNodeList.forEach((newNode) => {
+            parentNode.appendChild(newNode);
+        });
+        return;
+    }
+    parentNode = node.parentNode || parentNode;
+    if (!parentNode){
+        return;
+    }
+    if (Array.isArray(newNodes)) {
+        const tempNode = document.createComment('temp');
+        parentNode.replaceChild(tempNode, node);
+        newNodes.forEach((newNode) => {
+            parentNode.insertBefore(newNode, tempNode);
+        });
+        unmountDom(tempNode);
+    } else {
+        parentNode.replaceChild(newNodes, node);
+    }
+}
+
 export function removeAllChildren(node: Node) {
     while (node.firstChild) {
         node.removeChild(node.firstChild);
@@ -90,7 +128,40 @@ export function replaceDom(origin, newDom) {
 export function getAttributeNodes(ele: Element, prefixList) {
     const attributes = ele.attributes || [];
     // get all attributes nodes match prefix
-    return Array.from(attributes).filter((attr) =>
-        prefixList.some((prefix) => attr.name.startsWith(prefix))
-    );
+    return Array.from(attributes).filter((attr) => prefixList.some((prefix) => attr.name.startsWith(prefix)));
+}
+
+export function getAttributeInfoMapping(ele: Element, prefixList = [], aliasMapping = {}) {
+    const attributes = [...(ele.attributes || [])].map((attr) => {
+        let parts = attr.name.split(':');
+        if (parts.length === 2 && parts[0] === '') {
+            parts[1] = ':' + parts[1];
+        }
+        if (parts.length === 1) {
+            parts = ['', parts[0]];
+        }
+        const [prefix, name] = parts;
+        return {
+            fullName: attr.name,
+            prefix: prefix,
+            name,
+            value: attr.value
+        };
+    });
+    const result = {};
+    prefixList.forEach((prefix) => {
+        prefix = prefix.trim().replace(/:$/, '');
+        const aliasPrefix = aliasMapping[prefix] || prefix;
+        result[prefix] = attributes.filter((attr) => {
+            if (isNotBlank(attr.prefix)) {
+                return attr.prefix === prefix || attr.prefix === aliasPrefix;
+            }
+            if (attr.name.startsWith(aliasPrefix)) {
+                attr.name = attr.name.replace(aliasPrefix, '');
+                return true;
+            }
+            return false;
+        });
+    });
+    return result;
 }

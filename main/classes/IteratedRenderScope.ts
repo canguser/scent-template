@@ -1,9 +1,9 @@
 import { RenderScope } from '../interface/RenderScope';
 import { RenderResult } from '../interface/RenderResult';
-import { execExpression } from '../utils/ExpressionHelper';
 import { RenderScopeStrategy } from '../interface/RenderScopeStrategy';
 import { ScopeType } from '../enum/ScopeType';
 import { getAttributeNodes } from '../utils/DomHelper';
+import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
 
 export class IteratedRenderScope implements RenderScope {
     expression: string;
@@ -22,7 +22,8 @@ export class IteratedRenderScope implements RenderScope {
     }
 
     render(context: object): RenderResult {
-        const array = execExpression(this.expression, context);
+        const result = execExpression(this.expression, context);
+        const array = Array.isArray(result) ? result : Array.from(result);
         return {
             replaceParent: true,
             rendererParams: array.map((item, index) => {
@@ -56,7 +57,7 @@ export class IteratedRenderScope implements RenderScope {
 }
 
 export class IteratedRenderScopeStrategy implements RenderScopeStrategy<Element> {
-    type: ScopeType;
+    type: ScopeType = ScopeType.Alienated_UNIQUE;
 
     constructor(public prefixList: string[] = ['s-for']) {}
 
@@ -70,6 +71,7 @@ export class IteratedRenderScopeStrategy implements RenderScopeStrategy<Element>
         const [, item] = attributeNode.name.split(':');
         const targetKey = attributeNode.value;
         target.removeAttribute(attributeNode.name);
+        target.removeAttribute('s-key');
         const template = target.cloneNode(true);
         return new IteratedRenderScope(targetKey, target, keyAttribute || '$index', item, template);
     }

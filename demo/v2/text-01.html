@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../../dist/scent.template.js"></script>
+
+</head>
+<body>
+    <div id="test">
+        <p1>asd</p1>
+    </div>
+</body>
+<script>
+    const { ScentRenderer, NormalProxyAdaptor, react } = window.scent.template;
+    const obj = react({
+        title: 'Hello World',
+        content: 'This is a test',
+        age: 18,
+    })
+    const renderer = new ScentRenderer(
+        {
+            mount: '#test',
+            template: `<div>
+                <h1>{title}</h1>
+                <p>{content}</p>
+                <p>{age}</p>
+                <button @click="age++">点击</button>
+            </div>`,
+            context: obj,
+            adaptor: new NormalProxyAdaptor(obj)
+        }
+    );
+</script>
+</html>

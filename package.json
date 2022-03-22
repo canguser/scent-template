@@ -34,7 +34,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@rapidly/utils": "^2.0.0-beta4"
+    "@rapidly/utils": "^2.0.0-beta6"
   },
   "types": "types/index.d.ts",
   "devDependencies": {

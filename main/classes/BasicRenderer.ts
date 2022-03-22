@@ -67,8 +67,8 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     updateSubRenderers(renderId: string, target: T, renderResult: RenderResult) {
         const replaceParent = renderResult.replaceParent;
         const params = renderResult.rendererParams;
+        const existSubRenderers = this.renderIdChildrenMapping[renderId] || [];
         if (params && params.length > 0) {
-            const existSubRenderers = this.renderIdChildrenMapping[renderId] || [];
             let subRenderersGroupedByIdentity = groupBy(existSubRenderers, 'identity');
             // check if identity in params is non-duplicated
             const identityInParams = params.map((param) => param.identity);
@@ -95,14 +95,14 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                 }
                 return subRenderer;
             });
-            existSubRenderers.slice(params.length).forEach((subRenderer) => {
-                const realElement = subRenderer.realElement;
-                subRenderer.destroy();
-                if (realElement) {
-                    unmountDom(realElement);
-                }
-            });
         }
+        existSubRenderers.slice(params.length || 0).forEach((subRenderer) => {
+            const realElement = subRenderer.realElement;
+            subRenderer.destroy();
+            if (realElement) {
+                unmountDom(realElement);
+            }
+        });
         this.checkToReplaceSubRenderers(renderId, target, replaceParent);
     }
 

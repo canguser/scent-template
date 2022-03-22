@@ -1,8 +1,9 @@
 import { RenderScope } from '../interface/RenderScope';
 import { RenderScopeStrategy } from '../interface/RenderScopeStrategy';
 import { ScopeType } from '../enum/ScopeType';
-import { execExpression } from '../utils/ExpressionHelper';
 import { register, unregister } from '@rapidly/utils/lib/commom/dom/DomEvent';
+import { getAttributeInfoMapping } from '../utils/DomHelper';
+import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
 
 export class EventRenderScope implements RenderScope {
     expression: string;
@@ -46,30 +47,18 @@ export class EventRenderScopeStrategy implements RenderScopeStrategy<Element> {
     constructor(public prefixList: string[] = ['s-on', '@']) {}
 
     match(target: Element): RenderScope<Element> | RenderScope<Element>[] | false {
-        // get all sub attributes nodes
-        const attributes = target.attributes || [];
-        // get all attributes nodes match prefix
-        const attributeNodes = Array.from(attributes).filter((attr) =>
-            this.prefixList.some((prefix) => attr.name.startsWith(prefix))
-        );
-        if (attributeNodes.length === 0) {
+        const [prefix, alias] = this.prefixList;
+        const attrInfos = getAttributeInfoMapping(target, [prefix], { [prefix]: alias })[prefix] || [];
+
+        if (attrInfos.length === 0) {
             return false;
         }
         // generate render scopes from attribute nodes
-        const renderScopes = attributeNodes.map((attr) => {
-            const expression = attr.value;
-
-            // get pre split prefix from attribute name by prefix list
-            const prefix = this.prefixList.find((p) => attr.name.startsWith(p));
-
-            // get attribute name without prefix
-            const eventName = attr.name.replace(prefix, '');
-
-            return new EventRenderScope(expression, target, eventName);
+        return attrInfos.map((attr) => {
+            const scope = new EventRenderScope(attr.value, target, attr.name);
+            // remove all related attributes from target
+            target.removeAttribute(attr.fullName);
+            return scope;
         });
-        // remove all related attributes from target
-        attributeNodes.forEach((attr) => target.removeAttribute(attr.name));
-
-        return renderScopes;
     }
 }
