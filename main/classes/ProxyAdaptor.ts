@@ -7,6 +7,8 @@ export abstract class ProxyAdaptor {
 
     renderer: Renderer;
 
+    toRenderFields = [];
+
     protected constructor(protected context: any) {}
 
     adapt(renderer: Renderer) {
@@ -41,12 +43,22 @@ export abstract class ProxyAdaptor {
 
     abstract stopListenGetter(): void;
 
-    protected renderByFields(fields: string[]) {
+    protected async renderByFields(fields: string[]) {
+
+        // waiting for all fields to be rendered
+        this.toRenderFields.push(...fields);
+        await Promise.resolve();
+
+        const allRenderFieldsUnique = [...new Set(this.toRenderFields)];
         // get all render ids by fields
-        const renderIds = fields.reduce((renderIds, field) => {
+        const renderIds = allRenderFieldsUnique.reduce((renderIds, field) => {
             const ids = this.fieldsRenderIdMapping[field] || [];
+            // clear the mapping of field to render ids, will re-fill it in next render
+            this.fieldsRenderIdMapping[field] = [];
             return renderIds.concat(ids);
         }, []);
+        // clear the fields stacks for next sticky render
+        this.toRenderFields = [];
         // render by render ids
         renderIds.forEach((renderId) => {
             this.renderer.renderById(renderId);
