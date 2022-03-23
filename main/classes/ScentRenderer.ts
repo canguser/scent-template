@@ -9,12 +9,14 @@ import { SubRendererParam } from '../interface/SubRendererParam';
 import { IteratedRenderScopeStrategy } from './IteratedRenderScope';
 import { BindRenderScopeStrategy } from './BindRenderScope';
 import { ChoiceRenderScopeStrategy } from './ChoiceRenderScope';
+import { ComponentRenderScopeStrategy } from './ComponentRenderScope';
 
 const defaultOptions: any = {
     context: {},
     renderScopeStrategies: [
         new IteratedRenderScopeStrategy(),
         new ChoiceRenderScopeStrategy(),
+        new ComponentRenderScopeStrategy(),
         new TextRenderScopeStrategy(),
         new BindRenderScopeStrategy(),
         new EventRenderScopeStrategy()
