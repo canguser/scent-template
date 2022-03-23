@@ -13,9 +13,6 @@ export class NormalProxyAdaptor extends ProxyAdaptor {
                 const lastParent = get(target, properties);
                 if (value !== old || (Array.isArray(lastParent) && lastProperty === 'length')) {
                     this.renderByFields([propertyChain])
-                        .then(() =>{
-                            console.log('render success');
-                        });
                 }
             }
         });

@@ -1,5 +1,6 @@
 import { Renderer } from '../interface/Renderer';
 import { debounce } from '@rapidly/utils/lib/commom/async/debounce';
+import { waitNextFrame } from '../utils/NormalUtils';
 
 export abstract class ProxyAdaptor {
     renderIdFieldsMapping = {};
@@ -48,21 +49,27 @@ export abstract class ProxyAdaptor {
         // waiting for all fields to be rendered
         this.toRenderFields.push(...fields);
         await debounce({ context: this, during: 0 });
-        console.time('render time');
-        const allRenderFieldsUnique = [...new Set(this.toRenderFields)];
-        // get all render ids by fields
-        const renderIds = allRenderFieldsUnique.reduce((renderIds, field) => {
-            const ids = this.fieldsRenderIdMapping[field] || [];
-            // clear the mapping of field to render ids, will re-fill it in next render
-            this.fieldsRenderIdMapping[field] = [];
-            return renderIds.concat(ids);
-        }, []);
-        // clear the fields stacks for next sticky render
-        this.toRenderFields = [];
-        // render by render ids
-        renderIds.forEach((renderId) => {
-            this.renderer.renderById(renderId);
-        });
-        console.timeEnd('render time');
+        if (this.toRenderFields.length) {
+            console.time('render time');
+            const allRenderFieldsUnique = [...new Set(this.toRenderFields)];
+            // get all render ids by fields
+            const renderIds = allRenderFieldsUnique.reduce((renderIds, field) => {
+                const ids = this.fieldsRenderIdMapping[field] || [];
+                // clear the mapping of field to render ids, will re-fill it in next render
+                this.fieldsRenderIdMapping[field] = [];
+                return renderIds.concat(ids);
+            }, []);
+            // clear the fields stacks for next sticky render
+            this.toRenderFields = [];
+            // render by render ids
+            await Promise.all(
+                renderIds.map((renderId) => {
+                    return waitNextFrame().then(() => {
+                        this.renderer.renderById(renderId);
+                    });
+                })
+            );
+            console.timeEnd('render time');
+        }
     }
 }

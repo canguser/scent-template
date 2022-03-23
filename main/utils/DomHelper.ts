@@ -85,7 +85,7 @@ export function replaceNodes_v2(nodes, newNodes, parentNode?: Node) {
 }
 
 export function replaceNodes(nodes, newNodes, parentNode?: Node): void {
-    return replaceNodes_v2(nodes, newNodes, parentNode);
+    // return replaceNodes_v2(nodes, newNodes, parentNode);
     let node = nodes;
     if (Array.isArray(nodes)) {
         const length = nodes.length;
