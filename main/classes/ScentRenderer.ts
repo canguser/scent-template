@@ -116,7 +116,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
             return;
         }
         if (!this.replaceMounted) {
-            (this.virtualElement as DocumentFragment).append(...[...this.realElement.childNodes]);
+            (this.virtualElement as DocumentFragment).append(...this.realElement.childNodes);
             replaceNodes([...this.realElement.childNodes], this.originElements, this.realElement);
         } else {
             replaceNodes(this.originElements, this.realElement);

@@ -23,7 +23,7 @@
             console.log('addRow')
             const time = obj.time == null ? (obj.time = 1) : ++obj.time
             obj.rows.push(
-                ...Array.from({ length: 2 }).map((e, i) => {
+                ...Array.from({ length: 1000 }).map((e, i) => {
                     return {
                         a: time + '' + i + 1,
                         b: 'b' + i + time,

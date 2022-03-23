@@ -51,7 +51,41 @@ export function replaceNode(node, newNode, parentNode?: Node) {
     }
 }
 
+export function replaceNodes_v2(nodes, newNodes, parentNode?: Node) {
+    nodes = [...Array.isArray(nodes) ? nodes : [nodes]];
+    parentNode = parentNode || nodes[0].parentNode;
+    newNodes = [...Array.isArray(newNodes) ? newNodes : [newNodes]];
+    if (parentNode) {
+        const fragment = document.createDocumentFragment();
+        const placedNode = nodes.splice(nodes.length - 1, 1)[0];
+        // remove all nodes
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (parentNode === node.parentNode) {
+                parentNode.removeChild(node);
+            }
+        }
+        const allNodes = [...parentNode.childNodes];
+        let hasAppend = false;
+        for (let i = 0; i < allNodes.length; i++) {
+            const node = allNodes[i];
+            if (node === placedNode) {
+                fragment.append(...newNodes);
+                hasAppend = true;
+                unmountDom(node);
+                continue;
+            }
+            fragment.appendChild(node);
+        }
+        if (!hasAppend) {
+            fragment.append(...newNodes);
+        }
+        parentNode.appendChild(fragment);
+    }
+}
+
 export function replaceNodes(nodes, newNodes, parentNode?: Node): void {
+    return replaceNodes_v2(nodes, newNodes, parentNode);
     let node = nodes;
     if (Array.isArray(nodes)) {
         const length = nodes.length;
@@ -60,8 +94,8 @@ export function replaceNodes(nodes, newNodes, parentNode?: Node): void {
         }
         node = nodes[length - 1];
     }
-    if (!node){
-        if (!parentNode){
+    if (!node) {
+        if (!parentNode) {
             return;
         }
         const newNodeList = Array.isArray(newNodes) ? newNodes : [newNodes];
@@ -71,7 +105,7 @@ export function replaceNodes(nodes, newNodes, parentNode?: Node): void {
         return;
     }
     parentNode = node.parentNode || parentNode;
-    if (!parentNode){
+    if (!parentNode) {
         return;
     }
     if (Array.isArray(newNodes)) {
