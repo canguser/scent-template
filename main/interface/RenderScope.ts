@@ -8,4 +8,10 @@ export interface RenderScope<T = any> {
     expression: string;
 
     render(context: object): void | RenderResult;
+
+    mount?():void;
+
+    unmount?():void;
+
+    destroy?():void;
 }

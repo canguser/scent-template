@@ -36,7 +36,7 @@
         {
             mount: '#test',
             template: `<div>
-                <c-component s-if="age>27" :title="schools[2].name"></c-component>
+                <c-component :title="schools[2].name"></c-component>
                 <h1>{title}</h1>
                 <p s-bind:title="content">{content}</p>
                 <p>{age}</p>
@@ -54,11 +54,5 @@
             replaceMounted: true,
         }
     );
-
-    subscribe(obj, {
-        set: (...args) => {
-            console.log(`args`, args);
-        }
-    })
 </script>
 </html>
