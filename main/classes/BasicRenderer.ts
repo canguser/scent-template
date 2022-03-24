@@ -28,6 +28,11 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
             after: (scopeId: string) => void;
         };
     } = {};
+    singleRenderSurroundMapping: {
+        [id: string]: {
+            hook: (render: Function, scopeId: string) => void;
+        };
+    } = {};
 
     identity: any;
     parentRenderId: string;
@@ -118,20 +123,52 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
         });
     }
 
-    public renderById(id: string): void {
-        const scope = this.scopesMapper[id];
-        if (scope) {
-            this.notifyBeforeSingleRender(id);
-            const renderResult = scope.render(this.context);
-            this.notifyAfterSingleRender(id);
-            if (renderResult) {
-                this.updateSubRenderers(id, scope.target, renderResult);
-            }
-        } else {
-            this.children.forEach((child) => {
-                child.renderById(id);
-            });
+    get singleRenderSurroundMappingWithParents() {
+        const results = Object.values(this.singleRenderSurroundMapping) || [];
+        if (this.parent) {
+            results.push(...this.parent.singleRenderSurroundMappingWithParents);
         }
+        return results;
+    }
+
+    getSurroundHook() {
+        const surroundHooks = this.singleRenderSurroundMappingWithParents || [];
+        const realSurround = surroundHooks.reduce(
+            (prev, curr) => {
+                return {
+                    hook: (render, id) => {
+                        curr.hook(() => {
+                            prev.hook(render, id);
+                        }, id);
+                    }
+                };
+            },
+            {
+                hook: (render) => {
+                    render();
+                }
+            }
+        );
+        return realSurround.hook;
+    }
+
+    public renderById(id: string): void {
+        const hook = this.getSurroundHook();
+        hook(() => {
+            const scope = this.scopesMapper[id];
+            if (scope) {
+                this.notifyBeforeSingleRender(id);
+                const renderResult = scope.render(this.context);
+                this.notifyAfterSingleRender(id);
+                if (renderResult) {
+                    this.updateSubRenderers(id, scope.target, renderResult);
+                }
+            } else {
+                this.children.forEach((child) => {
+                    child.renderById(id);
+                });
+            }
+        }, id);
     }
 
     abstract unmount(): void;
@@ -191,5 +228,15 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
 
     unwatchSingleRender(id: string): void {
         delete this.singleRenderWatchingMapping[id];
+    }
+
+    surroundSingleRender(hook: (render: Function, renderId: string) => void): string {
+        const id = genOrderedId();
+        this.singleRenderSurroundMapping[id] = { hook };
+        return id;
+    }
+
+    unrollSingleRender(id: string) {
+        delete this.singleRenderSurroundMapping[id];
     }
 }

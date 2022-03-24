@@ -49,6 +49,10 @@ export interface Renderer<T = any> {
 
     watchSingleRender(before: (scopeId: string) => void, after: (scopeId: string) => void): string;
 
+    surroundSingleRender(hook: (render: Function, renderId: string) => void): string;
+
+    unrollSingleRender(id: string): void;
+
     unwatchSingleRender(id: string): void;
 
     renderByIdList(ids: string[]): void;

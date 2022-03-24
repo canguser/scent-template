@@ -41,9 +41,9 @@ export abstract class ProxyAdaptor {
         );
     }
 
-    abstract startListenGetter(cb: (field: string) => void): void;
+    startListenGetter(cb: (field: string) => void): void {}
 
-    abstract stopListenGetter(): void;
+    stopListenGetter(): void {}
 
     protected async renderByFields(fields: string[]) {
         // waiting for all fields to be rendered
