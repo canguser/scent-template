@@ -26,32 +26,35 @@ export class IteratedRenderScope implements RenderScope {
         const array = Array.isArray(result) ? result : Array.from(result);
         return {
             replaceParent: true,
-            rendererParams: array.map((item, index) => {
-                const ctx = new Proxy(context, {
-                    get: (target, key) => {
-                        if (key === this.indexKey) {
-                            return index;
+            rendererParams: array
+                .filter((item) => item != null)
+                .map((item, index) => {
+                    const i = index;
+                    const ctx = new Proxy(context, {
+                        get: (target, key) => {
+                            if (key === this.indexKey) {
+                                return i;
+                            }
+                            if (key === this.iteratorItem) {
+                                return array[i];
+                            }
+                            return target[key];
+                        },
+                        set: (target: object, p: string | symbol, value: any, receiver: any): boolean => {
+                            if (p === this.indexKey) {
+                                return false;
+                            }
+                            target[p] = value;
+                            return true;
                         }
-                        if (key === this.iteratorItem) {
-                            return array[index];
-                        }
-                        return target[key];
-                    },
-                    set: (target: object, p: string | symbol, value: any, receiver: any): boolean => {
-                        if (p === this.indexKey) {
-                            return false;
-                        }
-                        target[p] = value;
-                        return true;
-                    }
-                });
-                const identityValue = execExpression(this.identityKey, ctx);
-                return {
-                    identity: identityValue || index,
-                    context: ctx,
-                    template: this.template
-                };
-            })
+                    });
+                    const identityValue = execExpression(this.identityKey, ctx);
+                    return {
+                        identity: identityValue || index,
+                        context: ctx,
+                        template: this.template
+                    };
+                })
         };
     }
 }

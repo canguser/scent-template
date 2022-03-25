@@ -73,6 +73,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
         const replaceParent = renderResult.replaceParent;
         const params = renderResult.rendererParams;
         const existSubRenderers = this.renderIdChildrenMapping[renderId] || [];
+        let replacedRenderers: BasicRenderer<T>[] = [];
         if (params && params.length > 0) {
             let subRenderersGroupedByIdentity = groupBy(existSubRenderers, 'identity');
             // check if identity in params is non-duplicated
@@ -85,7 +86,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                     param.identity = i;
                 });
             }
-            this.renderIdChildrenMapping[renderId] = params.map((param, i) => {
+            replacedRenderers = this.renderIdChildrenMapping[renderId] = params.map((param, i) => {
                 let subRenderer = [...(subRenderersGroupedByIdentity.get(param.identity) || [])][0];
                 if (!subRenderer) {
                     const existSubRenderer = existSubRenderers[i];
@@ -98,16 +99,22 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                     }
                     subRenderer.linkParent(this, param.identity, renderId);
                 }
+                subRenderer.context = param.context;
                 return subRenderer;
             });
         }
-        existSubRenderers.slice(params.length || 0).forEach((subRenderer) => {
-            const realElement = subRenderer.realElement;
-            subRenderer.destroy();
-            if (realElement) {
-                unmountDom(realElement);
-            }
-        });
+        // remove unused sub renderers
+        existSubRenderers
+            .filter((subRenderer) => {
+                return replacedRenderers.indexOf(subRenderer) === -1;
+            })
+            .forEach((subRenderer) => {
+                const realElement = subRenderer.realElement;
+                subRenderer.destroy();
+                if (realElement) {
+                    unmountDom(realElement);
+                }
+            });
         this.checkToReplaceSubRenderers(renderId, target, replaceParent);
     }
 
@@ -154,21 +161,23 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
 
     public renderById(id: string): void {
         const hook = this.getSurroundHook();
-        hook(() => {
-            const scope = this.scopesMapper[id];
-            if (scope) {
+        let scope = this.scopesMapper[id];
+        if (scope) {
+            let renderResult: RenderResult | void;
+            hook(() => {
+                scope = this.scopesMapper[id];
                 this.notifyBeforeSingleRender(id);
-                const renderResult = scope.render(this.context);
+                renderResult = scope.render(this.context);
                 this.notifyAfterSingleRender(id);
-                if (renderResult) {
-                    this.updateSubRenderers(id, scope.target, renderResult);
-                }
-            } else {
-                this.children.forEach((child) => {
-                    child.renderById(id);
-                });
+            }, id);
+            if (renderResult) {
+                this.updateSubRenderers(id, scope.target, renderResult);
             }
-        }, id);
+        } else {
+            this.children.forEach((child) => {
+                child.renderById(id);
+            });
+        }
     }
 
     abstract unmount(): void;

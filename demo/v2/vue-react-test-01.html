@@ -12,13 +12,15 @@
         </div>
     </body>
     <script>
-        const { ScentRenderer, ProxyAdaptor  } = window.scent.template;
-        const { reactive, effect } = VueReactivity;
+        const { ScentRenderer, ProxyAdaptor, NormalProxyAdaptor, react } = window.scent.template;
+        const { reactive, ReactiveEffect } = VueReactivity;
         const obj = reactive({
             title: 'Hello World',
             content: 'This is a test',
             age: 18,
             list: [1, 2, 3, 4, 5],
+            b: 'b',
+            c: 'c',
             schools: [
                 { name: '北京大学', id: 1 },
                 { name: '清华大学', id: 2 },
@@ -41,16 +43,54 @@
 
             effectIdMap = {};
 
-            adapt(renderer) {
-                renderer.surroundSingleRender((render, id) => {
-                    let runner = this.effectIdMap[id];
-                    if (runner) {
-                        runner.effect.stop();
-                    }
-                    runner = effect(() => {
-                        render();
+            renderIdList = [];
+
+            renderer;
+
+            waitNextFrame() {
+                return new Promise((resolve) => {
+                    requestAnimationFrame(() => {
+                        resolve();
                     });
-                    this.effectIdMap[id] = runner;
+                });
+            }
+
+            async renderIds(...ids) {
+                for (let id of ids) {
+                    if (this.renderIdList.indexOf(id) === -1) {
+                        this.renderIdList.push(id);
+                    }
+                }
+                if (this.renderer) {
+                    await this.waitNextFrame();
+                    if (this.renderIdList.length > 0) {
+                        console.time('rendered');
+                        this.renderIdList.forEach((id) => {
+                            this.renderer.renderById(id);
+                        });
+                        console.timeEnd('rendered');
+                        this.renderIdList = [];
+                    }
+                }
+            }
+
+            adapt(renderer) {
+                this.renderer = renderer;
+                renderer.surroundSingleRender((render, id) => {
+                    let effect = this.effectIdMap[id];
+                    if (effect) {
+                        effect.stop();
+                    }
+                    effect = new ReactiveEffect(
+                        () => {
+                            render();
+                        },
+                        () => {
+                            this.renderIds(id);
+                        }
+                    );
+                    effect.run();
+                    this.effectIdMap[id] = effect;
                 });
             }
         }
@@ -61,6 +101,7 @@
                 <h1>{title}</h1>
                 <p s-bind:title="content">{content}</p>
                 <p>{age}</p>
+                <p>{age > 20 ? b : c}</p>
                 <ul>
                     <li s-for:item="list" @click="alert($index)">{item}</li>
                 </ul>

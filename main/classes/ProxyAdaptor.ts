@@ -57,7 +57,12 @@ export abstract class ProxyAdaptor {
                 const ids = this.fieldsRenderIdMapping[field] || [];
                 // clear the mapping of field to render ids, will re-fill it in next render
                 this.fieldsRenderIdMapping[field] = [];
-                return renderIds.concat(ids);
+                for (const id of ids) {
+                    if (renderIds.indexOf(id) === -1) {
+                        renderIds.push(id);
+                    }
+                }
+                return renderIds;
             }, []);
             // clear the fields stacks for next sticky render
             this.toRenderFields = [];
