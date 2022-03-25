@@ -4,15 +4,15 @@ import { get, parseChain, subscribe } from '@scent/proxies';
 export class NormalProxyAdaptor extends ProxyAdaptor {
     subscriber: any;
 
-    constructor(context: object) {
-        super(context);
-        subscribe(context, {
+    initialize() {
+        super.initialize();
+        subscribe(this.context, {
             set: (target, propertyChain, value, old) => {
                 const properties = parseChain(propertyChain);
                 const lastProperty = properties.splice(properties.length - 1, 1)[0];
                 const lastParent = get(target, properties);
                 if (value !== old || (Array.isArray(lastParent) && lastProperty === 'length')) {
-                    this.renderByFields([propertyChain])
+                    this.renderByFields([propertyChain]);
                 }
             }
         });

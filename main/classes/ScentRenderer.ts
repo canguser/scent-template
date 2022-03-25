@@ -49,7 +49,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         if (adaptor) {
             this.proxyAdaptor = adaptor;
-            adaptor.adapt(this);
+            adaptor.adapt(this, this.context);
         }
 
         if (typeof mount === 'string') {

@@ -3,18 +3,18 @@
     <head>
         <meta charset="UTF-8" />
         <title>Title</title>
-        <script src="./rg.js"></script>
-        <script src="../../dist/scent.template.js"></script>
     </head>
     <body>
         <div id="test">
             <p1>asd</p1>
         </div>
     </body>
-    <script>
-        const { ScentRenderer, ProxyAdaptor, NormalProxyAdaptor, react } = window.scent.template;
-        const { reactive, ReactiveEffect } = VueReactivity;
-        const obj = reactive({
+    <script type="module">
+        import { ScentRenderer, NormalProxyAdaptor, react } from '../../dist/scent.template.esm.js';
+        import { reactive } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+        import { VueReactiveAdaptor} from '../VueReactiveAdaptor.js';
+
+        const obj = window.obj = reactive({
             title: 'Hello World',
             content: 'This is a test',
             age: 18,
@@ -36,65 +36,6 @@
             }
         });
 
-        class VueReactProxyAdaptor extends ProxyAdaptor {
-            constructor(obj) {
-                super(obj);
-            }
-
-            effectIdMap = {};
-
-            renderIdList = [];
-
-            renderer;
-
-            waitNextFrame() {
-                return new Promise((resolve) => {
-                    requestAnimationFrame(() => {
-                        resolve();
-                    });
-                });
-            }
-
-            async renderIds(...ids) {
-                for (let id of ids) {
-                    if (this.renderIdList.indexOf(id) === -1) {
-                        this.renderIdList.push(id);
-                    }
-                }
-                if (this.renderer) {
-                    await this.waitNextFrame();
-                    if (this.renderIdList.length > 0) {
-                        console.time('rendered');
-                        this.renderIdList.forEach((id) => {
-                            this.renderer.renderById(id);
-                        });
-                        console.timeEnd('rendered');
-                        this.renderIdList = [];
-                    }
-                }
-            }
-
-            adapt(renderer) {
-                this.renderer = renderer;
-                renderer.surroundSingleRender((render, id) => {
-                    let effect = this.effectIdMap[id];
-                    if (effect) {
-                        effect.stop();
-                    }
-                    effect = new ReactiveEffect(
-                        () => {
-                            render();
-                        },
-                        () => {
-                            this.renderIds(id);
-                        }
-                    );
-                    effect.run();
-                    this.effectIdMap[id] = effect;
-                });
-            }
-        }
-
         const renderer = new ScentRenderer({
             mount: '#test',
             template: `<div>
@@ -112,7 +53,7 @@
                 <button @click="age++">点击</button>
             </div>`,
             context: obj,
-            adaptor: new VueReactProxyAdaptor(obj),
+            adaptor: new VueReactiveAdaptor(),
             replaceMounted: true
         });
     </script>

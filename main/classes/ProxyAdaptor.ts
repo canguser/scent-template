@@ -11,11 +11,16 @@ export abstract class ProxyAdaptor {
 
     toRenderFields = [];
 
-    protected constructor(protected context: any) {}
+    context: object;
 
-    adapt(renderer: Renderer) {
+    adapt(renderer: Renderer, context: object) {
         this.renderer = renderer;
-        renderer.watchSingleRender(
+        this.context = context;
+        this.initialize();
+    }
+
+    initialize() {
+        this.renderer.watchSingleRender(
             (renderId) => {
                 this.renderIdFieldsMapping[renderId] = [];
                 this.startListenGetter((field) => {
