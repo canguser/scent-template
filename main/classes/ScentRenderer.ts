@@ -11,6 +11,7 @@ import { BindRenderScopeStrategy } from './BindRenderScope';
 import { ChoiceRenderScopeStrategy } from './ChoiceRenderScope';
 import { ComponentRenderScopeStrategy } from './ComponentRenderScope';
 import { TemplateRenderScopeStrategy } from './TemplateRenderScope';
+import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
 
 const defaultOptions: any = {
     context: {},
@@ -42,7 +43,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
             renderScopeStrategies = [],
             mount = undefined,
             adaptor = undefined,
-            autoMounted = true,
+            autoInit = true,
             replaceMounted = false
         } = { ...defaultOptions, ...options };
 
@@ -74,10 +75,8 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         this.context = context;
 
-        this.compile();
-        if (autoMounted) {
-            this.render();
-            this.mount();
+        if (autoInit) {
+            this.init();
         }
     }
 
@@ -166,17 +165,17 @@ export class ScentRenderer extends BasicRenderer<Node> {
         // filter subRenderers are not mounted
         (subRenderers as ScentRenderer[])
             .filter((subRenderer) => {
-                return !subRenderer.hasMounted;
+                return !subRenderer.hasMounted && !subRenderer.destroyed;
             })
             .forEach((subRenderer) => {
-                subRenderer.render();
-                subRenderer.mount();
+                subRenderer.init();
             });
     }
 
     genSubRenderer(param: SubRendererParam, target: Node | undefined): ScentRenderer {
-        const realElement = document.createComment('--sub-renderers--');
+        const realElement = document.createComment('--sub-renderers--'+genOrderedId());
         if (target) {
+            // if target existing, means not to replace parent
             target.appendChild(realElement);
         }
         return new ScentRenderer({
@@ -184,7 +183,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
             context: param.context,
             renderScopeStrategies: this.renderScopeStrategies,
             mount: realElement,
-            autoMounted: false,
+            autoInit: false,
             replaceMounted: true
         });
     }

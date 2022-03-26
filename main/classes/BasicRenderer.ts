@@ -38,6 +38,12 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     parentRenderId: string;
     destroyed: boolean = false;
 
+    init() {
+        this.compile();
+        this.render();
+        this.mount();
+    }
+
     abstract compile(): void;
 
     abstract mount(target?: T): void;
@@ -65,7 +71,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     }
 
     unlinkParent() {
-        if (this.parent && this.parentRenderId && this.identity) {
+        if (this.parent && this.parentRenderId && this.identity != null) {
             this.parent.unlinkChild(this.parentRenderId, this.identity);
             this.parent = undefined;
             this.identity = undefined;
@@ -108,8 +114,11 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                         subRenderer = this.genSubRenderer(param, replaceParent ? undefined : target);
                     } else {
                         subRenderer = this.genSubRenderer(param);
-                        subRenderer.realElement = existSubRenderer.realElement;
+                        const realElement = subRenderer.realElement = existSubRenderer.realElement;
                         existSubRenderer.destroy();
+                        if (realElement) {
+                            unmountDom(realElement);
+                        }
                     }
                     subRenderer.linkParent(this, param.identity, renderId);
                 }
@@ -202,9 +211,9 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
         if (this.destroyed) {
             return;
         }
-        this.children.forEach((child) => {
-            child.destroy();
-        });
+        // this.children.forEach((child) => {
+        //     child.destroy();
+        // });
         this.unmount();
         this.unlinkParent();
         this.destroyed = true;
