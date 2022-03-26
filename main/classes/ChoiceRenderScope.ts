@@ -3,6 +3,7 @@ import { RenderResult } from '../interface/RenderResult';
 import { RenderScopeStrategy } from '../interface/RenderScopeStrategy';
 import { ScopeType } from '../enum/ScopeType';
 import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
+import { genUniqueId } from '../utils/NormalUtils';
 
 export class ChoiceRenderScope implements RenderScope {
     expression: string;
@@ -20,7 +21,7 @@ export class ChoiceRenderScope implements RenderScope {
             rendererParams: render
                 ? [
                       {
-                          identity: this.target,
+                          identity: genUniqueId(),
                           template: this.target,
                           context: context()
                       }

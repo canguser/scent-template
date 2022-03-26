@@ -49,6 +49,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         this.renderScopeStrategies = renderScopeStrategies;
         this.replaceMounted = replaceMounted;
+        this.context = context;
 
         if (adaptor) {
             this.proxyAdaptor = adaptor;
@@ -72,8 +73,6 @@ export class ScentRenderer extends BasicRenderer<Node> {
         if (mount) {
             this.realElement = mount;
         }
-
-        this.context = context;
 
         if (autoInit) {
             this.init();

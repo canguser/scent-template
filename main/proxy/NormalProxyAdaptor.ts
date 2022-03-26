@@ -6,6 +6,7 @@ export class NormalProxyAdaptor extends ProxyAdaptor {
 
     initialize() {
         super.initialize();
+        console.log(this.context);
         subscribe(this.context, {
             set: (target, propertyChain, value, old) => {
                 const properties = parseChain(propertyChain);

@@ -3,8 +3,6 @@ import { ReactiveEffect } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2
 
 export class VueReactiveAdaptor extends ProxyAdaptor {
 
-    effectIdMap = {};
-
     renderIdList = [];
 
     renderer;
@@ -39,22 +37,18 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
 
     initialize() {
         this.renderer.surroundSingleRender((render, id) => {
-            let effect = this.effectIdMap[id];
-            if (effect) {
-                effect.stop();
-            }
-            effect = new ReactiveEffect(
+            let effect = new ReactiveEffect(
                 () => {
                     // console.log('reactive effect', id);
                     render();
                     // console.log('reactive effect end', id);
                 },
                 () => {
+                    effect.stop();
                     this.renderIds(id);
                 }
             );
             effect.run();
-            this.effectIdMap[id] = effect;
         });
     }
 }
