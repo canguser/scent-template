@@ -15,13 +15,13 @@ export class BindRenderScope implements RenderScope {
         this.attribute = attribute;
     }
 
-    render(context: object): void {
-        const value = execExpression(this.expression, context);
+    render(context: ()=>object): void {
+        const value = execExpression(this.expression, context());
         this.target.setAttribute(this.attribute, value);
         const { _bindAttr = {} } = this.target;
         Object.defineProperty(_bindAttr, this.attribute, {
             get: () => {
-                return execExpression(this.expression, context);
+                return execExpression(this.expression, context());
             },
             configurable: true,
             enumerable: true

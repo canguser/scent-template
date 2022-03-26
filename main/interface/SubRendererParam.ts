@@ -3,5 +3,5 @@ export interface SubRendererParam {
 
     template?: string;
 
-    context?: object;
+    context?: object | (() => object);
 }

@@ -12,8 +12,8 @@ export class TextRenderScope implements RenderScope {
         this.expression = expression;
     }
 
-    render(context: object) {
-        this.target.textContent = template(this.expression, context, { withFunction: true });
+    render(context: () => object) {
+        this.target.textContent = template(this.expression, context(), { withFunction: true });
     }
 }
 

@@ -27,6 +27,7 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
             await this.waitNextFrame();
             if (this.renderIdList.length > 0) {
                 console.time('rendered');
+                console.log('render ids', this.renderIdList);
                 this.renderIdList.forEach((id) => {
                     this.renderer.renderById(id);
                 });
@@ -44,7 +45,9 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
             }
             effect = new ReactiveEffect(
                 () => {
+                    // console.log('reactive effect', id);
                     render();
+                    // console.log('reactive effect end', id);
                 },
                 () => {
                     this.renderIds(id);

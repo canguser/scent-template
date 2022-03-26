@@ -9,7 +9,7 @@ import { unmountDom } from '../utils/DomHelper';
 import { hasDuplicate } from '../utils/NormalUtils';
 
 export abstract class BasicRenderer<T> implements Renderer<T> {
-    context: object;
+    _context: object;
 
     renderIdChildrenMapping: { [id: string]: BasicRenderer<T>[] } = {};
 
@@ -43,6 +43,20 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     abstract mount(target?: T): void;
 
     abstract genSubRenderer(param: SubRendererParam, target?: T): BasicRenderer<T>;
+
+    get context() {
+        if (this._context) {
+            return this._context;
+        }
+        if (this.parent){
+            return this.parent.context;
+        }
+        return {};
+    }
+
+    set context(context: object) {
+        this._context = context;
+    }
 
     linkParent(parent: BasicRenderer<T>, identity: any, parentRenderId: string): void {
         this.parent = parent;
@@ -99,7 +113,9 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                     }
                     subRenderer.linkParent(this, param.identity, renderId);
                 }
-                subRenderer.context = param.context;
+                if (subRenderer.context){
+                    subRenderer.context = param.context;
+                }
                 return subRenderer;
             });
         }
@@ -167,7 +183,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
             hook(() => {
                 scope = this.scopesMapper[id];
                 this.notifyBeforeSingleRender(id);
-                renderResult = scope.render(this.context);
+                renderResult = scope.render(() => this.context);
                 this.notifyAfterSingleRender(id);
             }, id);
             if (renderResult) {

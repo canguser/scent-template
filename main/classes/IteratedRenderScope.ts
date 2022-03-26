@@ -21,8 +21,8 @@ export class IteratedRenderScope implements RenderScope {
         this.template = template;
     }
 
-    render(context: object): RenderResult {
-        const result = execExpression(this.expression, context);
+    render(context: () => object): RenderResult {
+        const result = execExpression(this.expression, context());
         const array = Array.isArray(result) ? result : Array.from(result);
         return {
             replaceParent: true,
@@ -30,21 +30,22 @@ export class IteratedRenderScope implements RenderScope {
                 .filter((item) => item != null)
                 .map((item, index) => {
                     const i = index;
-                    const ctx = new Proxy(context, {
+                    const ctx = new Proxy(context(), {
                         get: (target, key) => {
                             if (key === this.indexKey) {
                                 return i;
                             }
+
                             if (key === this.iteratorItem) {
                                 return array[i];
                             }
-                            return target[key];
+                            return context()[key];
                         },
                         set: (target: object, p: string | symbol, value: any, receiver: any): boolean => {
                             if (p === this.indexKey) {
                                 return false;
                             }
-                            target[p] = value;
+                            context()[p] = value;
                             return true;
                         }
                     });

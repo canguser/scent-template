@@ -13,8 +13,8 @@ export class ChoiceRenderScope implements RenderScope {
         this.target = target;
     }
 
-    render(context: object): RenderResult {
-        const render = !!execExpression(this.expression, context);
+    render(context: () => object): RenderResult {
+        const render = !!execExpression(this.expression, context());
         return {
             replaceParent: true,
             rendererParams: render
@@ -22,7 +22,7 @@ export class ChoiceRenderScope implements RenderScope {
                       {
                           identity: this.target,
                           template: this.target,
-                          context
+                          context: context()
                       }
                   ]
                 : []

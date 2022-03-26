@@ -7,11 +7,11 @@ export interface RenderScope<T = any> {
 
     expression: string;
 
-    render(context: object): void | RenderResult;
+    render(context: () => object): void | RenderResult;
 
-    mount?():void;
+    mount?(): void;
 
-    unmount?():void;
+    unmount?(): void;
 
-    destroy?():void;
+    destroy?(): void;
 }

@@ -18,7 +18,7 @@ export class EventRenderScope implements RenderScope {
         this.eventName = eventName;
     }
 
-    render(context: object): void {
+    render(context: ()=>object): void {
         const func = execExpression(
             `
             (function($e){
@@ -28,7 +28,7 @@ export class EventRenderScope implements RenderScope {
                 }
             })
         `,
-            context
+            context()
         );
 
         if (this.eventHandlerId) {
@@ -36,7 +36,7 @@ export class EventRenderScope implements RenderScope {
         }
 
         this.eventHandlerId = register(this.target, this.eventName, (e) => {
-            func.call(context, e);
+            func.call(context(), e);
         });
     }
 }
