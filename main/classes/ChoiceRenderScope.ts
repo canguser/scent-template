@@ -36,6 +36,8 @@ export class ChoiceRenderScopeStrategy implements RenderScopeStrategy<Element> {
 
     key: string = 's-if';
 
+    identityName = 'choice';
+
     match(target: Element): RenderScope<Element> | false {
         if (!target.hasAttribute?.(this.key)) return false;
         const expression = target.getAttribute(this.key);

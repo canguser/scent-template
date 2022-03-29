@@ -12,17 +12,39 @@ import { ChoiceRenderScopeStrategy } from './ChoiceRenderScope';
 import { ComponentRenderScopeStrategy } from './ComponentRenderScope';
 import { TemplateRenderScopeStrategy } from './TemplateRenderScope';
 import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
+import { RenderScopeStrategy } from '../interface/RenderScopeStrategy';
 
 const defaultOptions: any = {
     context: {},
-    renderScopeStrategies: [
-        new IteratedRenderScopeStrategy(),
-        new ChoiceRenderScopeStrategy(),
-        new TemplateRenderScopeStrategy(),
-        new ComponentRenderScopeStrategy(),
-        new BindRenderScopeStrategy(),
-        new EventRenderScopeStrategy(),
-        new TextRenderScopeStrategy()
+    renderScopeStrategiesDef: [
+        {
+            identity: 'iterated',
+            class: IteratedRenderScopeStrategy
+        },
+        {
+            identity: 'choice',
+            class: ChoiceRenderScopeStrategy
+        },
+        {
+            identity: 'template',
+            class: TemplateRenderScopeStrategy
+        },
+        {
+            identity: 'component',
+            class: ComponentRenderScopeStrategy
+        },
+        {
+            identity: 'bind',
+            class: BindRenderScopeStrategy
+        },
+        {
+            identity: 'text',
+            class: TextRenderScopeStrategy
+        },
+        {
+            identity: 'event',
+            class: EventRenderScopeStrategy
+        }
     ]
 };
 
@@ -30,30 +52,43 @@ export class ScentRenderer extends BasicRenderer<Node> {
     template: string;
     originElements: Node[];
     hasMounted: boolean = false;
-    renderScopeStrategies: TextRenderScopeStrategy[];
     proxyAdaptor: ProxyAdaptor;
     replaceMounted: boolean = false;
     targetPlaceholderMapping = new Map<Node, Node>();
+    parent: ScentRenderer;
+
+    _renderScopeStrategies: RenderScopeStrategy<Node>[] = [];
+    renderScopeStrategiesDef = [];
 
     constructor(options: any = {}) {
         super();
         let {
             template = undefined,
             context = undefined,
-            renderScopeStrategies = [],
+            renderScopeStrategiesDef = undefined,
             mount = undefined,
             adaptor = undefined,
             autoInit = true,
-            replaceMounted = false
+            replaceMounted = false,
+            scopeOptions = {}
         } = { ...defaultOptions, ...options };
 
-        this.renderScopeStrategies = renderScopeStrategies;
+        if (renderScopeStrategiesDef) {
+            this.renderScopeStrategiesDef = renderScopeStrategiesDef;
+            this.renderScopeStrategies = renderScopeStrategiesDef.map((renderScopeStrategyDef: any) => {
+                let { identity, class: RenderScopeStrategyClass } = renderScopeStrategyDef;
+                const instance = new RenderScopeStrategyClass();
+                instance.identityName = identity;
+                return instance;
+            });
+        }
         this.replaceMounted = replaceMounted;
         this.context = context;
 
         if (adaptor) {
             this.proxyAdaptor = adaptor;
-            adaptor.adapt(this, this.context);
+            this.context = adaptor.create(this.context);
+            adaptor.adapt(this);
         }
 
         if (typeof mount === 'string') {
@@ -67,6 +102,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
                 this.template = template.outerHTML;
             }
         } else if (mount) {
+            this.replaceMounted = true;
             this.template = mount.outerHTML;
         }
 
@@ -74,8 +110,54 @@ export class ScentRenderer extends BasicRenderer<Node> {
             this.realElement = mount;
         }
 
+        Object.keys(scopeOptions).forEach((key) => {
+            this.setScopeOption(key, scopeOptions[key]);
+        });
+
         if (autoInit) {
             this.init();
+        }
+    }
+
+    get renderScopeStrategies() {
+        const strategies = this._renderScopeStrategies || [];
+        const parentStrategies = this.parent ? this.parent.renderScopeStrategies : [];
+        if (!parentStrategies.length){
+            return strategies;
+        }
+        return parentStrategies.map((strategy) => {
+            const replaceStrategy = strategies.find((s) => s.identityName === strategy.identityName);
+            if (replaceStrategy) {
+                return replaceStrategy;
+            }
+            return strategy;
+        });
+    }
+
+    set renderScopeStrategies(renderScopeStrategies: RenderScopeStrategy<Node>[]) {
+        this._renderScopeStrategies = renderScopeStrategies;
+    }
+
+    setScopeOption(key: string, value: any) {
+        console.log(key,value)
+        const targetScopeStrategy = this.renderScopeStrategies.find((strategy) => strategy.identityName === key);
+        if (targetScopeStrategy && typeof targetScopeStrategy.setConfigs === 'function') {
+            targetScopeStrategy.setConfigs(value);
+        }
+    }
+
+    setSelfScopeOption(key: string, value: any) {
+        let selfScopeStrategy = this._renderScopeStrategies.find((strategy) => strategy.identityName === key);
+        if (!selfScopeStrategy) {
+            const def = this.renderScopeStrategiesDef.find((strategy) => strategy.identity === key);
+            if (def) {
+                selfScopeStrategy = new def.class();
+                selfScopeStrategy.identityName = key;
+                this._renderScopeStrategies.push(selfScopeStrategy);
+            }
+        }
+        if (selfScopeStrategy && typeof selfScopeStrategy.setConfigs === 'function') {
+            selfScopeStrategy.setConfigs(value);
         }
     }
 
@@ -172,18 +254,23 @@ export class ScentRenderer extends BasicRenderer<Node> {
     }
 
     genSubRenderer(param: SubRendererParam, target: Node | undefined): ScentRenderer {
-        const realElement = document.createComment('--sub-renderers--'+genOrderedId());
+        const realElement = document.createComment('--sub-renderers--' + genOrderedId());
         if (target) {
             // if target existing, means not to replace parent
             target.appendChild(realElement);
         }
-        return new ScentRenderer({
+        const renderer = new ScentRenderer({
             template: param.template,
             context: param.context,
-            renderScopeStrategies: this.renderScopeStrategies,
             mount: realElement,
             autoInit: false,
             replaceMounted: true
         });
+        if (param.scopeOptions) {
+            Object.keys(param.scopeOptions).forEach((key) => {
+                renderer.setSelfScopeOption(key, param.scopeOptions[key]);
+            });
+        }
+        return renderer;
     }
 }

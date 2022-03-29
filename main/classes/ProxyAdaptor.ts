@@ -11,11 +11,8 @@ export abstract class ProxyAdaptor {
 
     toRenderFields = [];
 
-    context: object;
-
-    adapt(renderer: Renderer, context: object) {
+    adapt(renderer: Renderer) {
         this.renderer = renderer;
-        this.context = context;
         this.initialize();
     }
 
@@ -85,4 +82,6 @@ export abstract class ProxyAdaptor {
             }
         }
     }
+
+    abstract create(data: object): object;
 }

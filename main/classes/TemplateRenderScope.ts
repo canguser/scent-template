@@ -26,6 +26,8 @@ export class TemplateRenderScope implements RenderScope {
 export class TemplateRenderScopeStrategy implements RenderScopeStrategy<Element> {
     type: ScopeType = ScopeType.Alienated_UNIQUE;
 
+    identityName = 'template';
+
     match(target: Element): RenderScope<Element> | RenderScope<Element>[] | false {
         if (target.nodeType === Node.ELEMENT_NODE && (target.tagName || '').toLowerCase() === 'template') {
             return new TemplateRenderScope(target);

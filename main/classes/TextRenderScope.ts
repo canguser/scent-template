@@ -18,6 +18,9 @@ export class TextRenderScope implements RenderScope {
 }
 
 export class TextRenderScopeStrategy implements RenderScopeStrategy<Element> {
+
+    identityName = 'text';
+
     match(target: Element): RenderScope<Element> | false {
         if (target.nodeType === Node.TEXT_NODE && target.parentNode.nodeType !== Node.COMMENT_NODE) {
             return new TextRenderScope(target, target.textContent);

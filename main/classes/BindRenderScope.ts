@@ -34,6 +34,8 @@ export class BindRenderScopeStrategy implements RenderScopeStrategy<Element> {
     type: ScopeType = ScopeType.Inherited;
     prefixAlisa: string[] = ['s-bind', ':'];
 
+    identityName = 'bind';
+
     match(target: Element): RenderScope<Element>[] | false {
         const [prefix, alias] = this.prefixAlisa;
         const attrInfos = getAttributeInfoMapping(target, [prefix], { [prefix]: alias })[prefix] || [];

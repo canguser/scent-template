@@ -139,3 +139,7 @@ export function pathJoin(url: string, toPath: string | string[], split = '/') {
 export function hasDuplicate(array) {
     return array.some((item, index) => array.indexOf(item) !== index);
 }
+
+export function toDashName(name) {
+    return name.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '');
+}

@@ -46,6 +46,8 @@ export class EventRenderScopeStrategy implements RenderScopeStrategy<Element> {
 
     constructor(public prefixList: string[] = ['s-on', '@']) {}
 
+    identityName = 'event';
+
     match(target: Element): RenderScope<Element> | RenderScope<Element>[] | false {
         const [prefix, alias] = this.prefixList;
         const attrInfos = getAttributeInfoMapping(target, [prefix], { [prefix]: alias })[prefix] || [];

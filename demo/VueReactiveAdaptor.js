@@ -1,5 +1,5 @@
 import { ProxyAdaptor } from '../dist/scent.template.esm.js';
-import { ReactiveEffect } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+import { ReactiveEffect, reactive } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
 
 export class VueReactiveAdaptor extends ProxyAdaptor {
 
@@ -50,5 +50,9 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
             );
             effect.run();
         });
+    }
+
+    create(data){
+        return reactive(data);
     }
 }

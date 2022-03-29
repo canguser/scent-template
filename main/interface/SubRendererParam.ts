@@ -4,4 +4,6 @@ export interface SubRendererParam {
     template?: string;
 
     context?: object | (() => object);
+
+    scopeOptions?: { [key: string]: any };
 }

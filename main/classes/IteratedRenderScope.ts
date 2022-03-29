@@ -63,6 +63,8 @@ export class IteratedRenderScope implements RenderScope {
 export class IteratedRenderScopeStrategy implements RenderScopeStrategy<Element> {
     type: ScopeType = ScopeType.Alienated_UNIQUE;
 
+    identityName = 'iterated';
+
     constructor(public prefixList: string[] = ['s-for']) {}
 
     match(target: Element): RenderScope<Element> | RenderScope<Element>[] | false {
