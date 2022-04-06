@@ -17,11 +17,11 @@
 
         const cInput = createComponent({
             template: `<input type="text" :value="$props.value" @keyup="handleChange" />`,
-            data(props, element) {
+            data(props, instance) {
                 return {
                     handleChange(e) {
                         e.stopPropagation();
-                        element.dispatchEvent(new CustomEvent('changevalue', { detail: e.target.value }));
+                        instance.target.dispatchEvent(new CustomEvent('changevalue', { detail: e.target.value }));
                     }
                 };
             }

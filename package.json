@@ -1,6 +1,6 @@
 {
   "name": "@scent/template",
-  "version": "1.0.7",
+  "version": "2.0.0-beta1",
   "description": "",
   "main": "dist/scent.template.js",
   "mainMini": "dist/scent.template.mini.js",
@@ -12,7 +12,7 @@
   "author": "Cangshi",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "yarn run rollup && yarn run rollup:mini && yarn run rollup:esm:es5",
+    "build": "yarn run rollup && yarn run rollup:mini && yarn run rollup:esm:es5 && yarn run rollup:esm",
     "build-dev": "yarn run rollup:esm",
     "do-publish": "yarn run build && yarn run run-publish ",
     "run-publish": "yarn publish --access public --tag latest --new-version $npm_package_version",

@@ -1,8 +1,6 @@
 import { App, Component } from './interface/common';
 import { ScentRenderer } from './classes/ScentRenderer';
 
-export * from './proxy/NormalProxyAdaptor';
-export * from '@scent/proxies';
 export * from './classes/ScentRenderer';
 export * from './classes/ProxyAdaptor';
 
