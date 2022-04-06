@@ -43,8 +43,7 @@ export class EventRenderScope implements RenderScope {
 
 export class EventRenderScopeStrategy implements RenderScopeStrategy<Element> {
     type: ScopeType = ScopeType.Inherited;
-
-    constructor(public prefixList: string[] = ['s-on', '@']) {}
+    prefixList: string[] = ['s-on', '@']
 
     identityName = 'event';
 

@@ -1,4 +1,4 @@
-import { ergodicTree, genUniqueId } from '../utils/NormalUtils';
+import { ergodicTree, genUniqueId, traversingTreeNode } from '../utils/NormalUtils';
 import { TextRenderScopeStrategy } from './TextRenderScope';
 import { BasicRenderer } from './BasicRenderer';
 import { replaceNodes } from '../utils/DomHelper';
@@ -13,6 +13,8 @@ import { ComponentRenderScopeStrategy } from './ComponentRenderScope';
 import { TemplateRenderScopeStrategy } from './TemplateRenderScope';
 import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
 import { RenderScopeStrategy } from '../interface/RenderScopeStrategy';
+import { ModelRenderScopeStrategy } from '../scopes/ModelRenderScope';
+import { RenderScope } from '../interface/RenderScope';
 
 const defaultOptions: any = {
     context: {},
@@ -34,6 +36,10 @@ const defaultOptions: any = {
             class: ComponentRenderScopeStrategy
         },
         {
+            identity: 'model',
+            class: ModelRenderScopeStrategy
+        },
+        {
             identity: 'bind',
             class: BindRenderScopeStrategy
         },
@@ -52,11 +58,11 @@ export class ScentRenderer extends BasicRenderer<Node> {
     template: string;
     originElements: Node[];
     hasMounted: boolean = false;
-    proxyAdaptor: ProxyAdaptor;
     replaceMounted: boolean = false;
     targetPlaceholderMapping = new Map<Node, Node>();
     parent: ScentRenderer;
 
+    _proxyAdaptor: ProxyAdaptor;
     _renderScopeStrategies: RenderScopeStrategy<Node>[] = [];
     renderScopeStrategiesDef = [];
 
@@ -77,7 +83,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
             this.renderScopeStrategiesDef = renderScopeStrategiesDef;
             this.renderScopeStrategies = renderScopeStrategiesDef.map((renderScopeStrategyDef: any) => {
                 let { identity, class: RenderScopeStrategyClass } = renderScopeStrategyDef;
-                const instance = new RenderScopeStrategyClass();
+                const instance = new RenderScopeStrategyClass(this);
                 instance.identityName = identity;
                 return instance;
             });
@@ -122,7 +128,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
     get renderScopeStrategies() {
         const strategies = this._renderScopeStrategies || [];
         const parentStrategies = this.parent ? this.parent.renderScopeStrategies : [];
-        if (!parentStrategies.length){
+        if (!parentStrategies.length) {
             return strategies;
         }
         return parentStrategies.map((strategy) => {
@@ -138,8 +144,20 @@ export class ScentRenderer extends BasicRenderer<Node> {
         this._renderScopeStrategies = renderScopeStrategies;
     }
 
+    get proxyAdaptor() {
+        const adaptor = this._proxyAdaptor;
+        if (!adaptor && this.parent) {
+            return this.parent.proxyAdaptor;
+        }
+        return adaptor;
+    }
+
+    set proxyAdaptor(proxyAdaptor: ProxyAdaptor) {
+        this._proxyAdaptor = proxyAdaptor;
+    }
+
     setScopeOption(key: string, value: any) {
-        console.log(key,value)
+        console.log(key, value);
         const targetScopeStrategy = this.renderScopeStrategies.find((strategy) => strategy.identityName === key);
         if (targetScopeStrategy && typeof targetScopeStrategy.setConfigs === 'function') {
             targetScopeStrategy.setConfigs(value);
@@ -151,7 +169,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
         if (!selfScopeStrategy) {
             const def = this.renderScopeStrategiesDef.find((strategy) => strategy.identity === key);
             if (def) {
-                selfScopeStrategy = new def.class();
+                selfScopeStrategy = new def.class(this);
                 selfScopeStrategy.identityName = key;
                 this._renderScopeStrategies.push(selfScopeStrategy);
             }
@@ -166,7 +184,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
         const tempDom = document.createElement('template');
         tempDom.innerHTML = this.template;
         this.virtualElement = (tempDom.cloneNode(true) as HTMLTemplateElement).content;
-        ergodicTree(this.virtualElement)((node, parent, preventDeeply) => {
+        traversingTreeNode(this.virtualElement, 'childNodes', (node) => {
             let canGoDeep = true;
             for (let strategy of this.renderScopeStrategies) {
                 let result = strategy.match(node as Element);
@@ -189,9 +207,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
                     }
                 }
             }
-            if (!canGoDeep) {
-                preventDeeply();
-            }
+            return canGoDeep;
         });
     }
 

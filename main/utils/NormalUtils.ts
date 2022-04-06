@@ -1,6 +1,6 @@
 export function waitImmediately(context?: any, apiName: string = '_waitImmediatelyPS') {
     if (!context[apiName]) {
-        context[apiName] = new Promise(resolve => {
+        context[apiName] = new Promise((resolve) => {
             setTimeout(() => {
                 context[apiName] = undefined;
                 delete context[apiName];
@@ -12,7 +12,7 @@ export function waitImmediately(context?: any, apiName: string = '_waitImmediate
 }
 
 export function waitNextFrame(args?: any) {
-    return new Promise(async resolve => {
+    return new Promise(async (resolve) => {
         if (typeof window.requestAnimationFrame === 'function') {
             window.requestAnimationFrame(() => {
                 resolve(args);
@@ -34,22 +34,73 @@ export function genUniqueId() {
 }
 
 export function genStrategyMapper(mapper = {}, defaultValue, ignoreCase = false) {
-    return new Proxy({ ...mapper }, {
-        get(target, p, receiver) {
-            if (Object.getOwnPropertyNames(target)
-                .map<string | symbol>(name => ignoreCase ? name.toLowerCase() : name).includes((ignoreCase && typeof p === 'string') ? p.toLowerCase() : p)) {
-                return Reflect.get(target, p, receiver);
+    return new Proxy(
+        { ...mapper },
+        {
+            get(target, p, receiver) {
+                if (
+                    Object.getOwnPropertyNames(target)
+                        .map<string | symbol>((name) => (ignoreCase ? name.toLowerCase() : name))
+                        .includes(ignoreCase && typeof p === 'string' ? p.toLowerCase() : p)
+                ) {
+                    return Reflect.get(target, p, receiver);
+                }
+                return defaultValue;
             }
-            return defaultValue;
         }
-    });
+    );
+}
+
+export function traversingTreeNode<NodeType = Node>(
+    treeNode: NodeType,
+    childProperty: keyof NodeType,
+    callback,
+    {
+        parentNode,
+        avoidModify = true
+    }: {
+        parentNode?: NodeType;
+        avoidModify?: boolean;
+    } = {}
+) {
+    if (!treeNode) {
+        return;
+    }
+    let childNodes;
+    if (avoidModify) {
+        childNodes = [...(treeNode[childProperty] as any)];
+    }
+    const callbackResult = callback(treeNode, parentNode);
+    const continueTraversing = callbackResult !== false;
+    if (continueTraversing) {
+        if (!childNodes) {
+            childNodes = treeNode[childProperty] as any;
+        }
+        if (childNodes) {
+            for (let i = 0; i < childNodes.length; i++) {
+                traversingTreeNode(childNodes[i], childProperty, callback, {
+                    parentNode: treeNode,
+                    avoidModify
+                });
+            }
+        }
+    }
 }
 
 export function ergodicTree<NodeType>(tree: NodeType, childProperty: string = 'childNodes', parentNode?: NodeType) {
-    return function(callback: (node: NodeType, parent: NodeType, preventDeeply?: () => void, extraNodes?: (...nodes) => void) => void | Promise<void>) {
+    return function (
+        callback: (
+            node: NodeType,
+            parent: NodeType,
+            preventDeeply?: () => void,
+            extraNodes?: (...nodes) => void
+        ) => void | Promise<void>
+    ) {
         let prevent = false;
         let extraNodes = [];
-        const result = callback(tree, parentNode,
+        const result = callback(
+            tree,
+            parentNode,
             () => {
                 prevent = true;
             },
@@ -60,8 +111,10 @@ export function ergodicTree<NodeType>(tree: NodeType, childProperty: string = 'c
 
         function doAfter() {
             if (!prevent) {
-                const results = [...tree[childProperty], ...extraNodes].map(node => ergodicTree(node, childProperty, tree)(callback));
-                const promises = results.filter(r => r instanceof Promise);
+                const results = [...tree[childProperty], ...extraNodes].map((node) =>
+                    ergodicTree(node, childProperty, tree)(callback)
+                );
+                const promises = results.filter((r) => r instanceof Promise);
                 if (promises.length > 0) {
                     return Promise.all(results);
                 }
@@ -105,7 +158,7 @@ export function getHostUrl(url) {
 
 export function urlJoin(url, toPath) {
     const host = getHostUrl(url);
-    return pathJoin(host + (url.replace(host, '').replace(/\/[^\/]+$/, '')), toPath);
+    return pathJoin(host + url.replace(host, '').replace(/\/[^\/]+$/, ''), toPath);
 }
 
 export function pathJoin(url: string, toPath: string | string[], split = '/') {
@@ -126,7 +179,7 @@ export function pathJoin(url: string, toPath: string | string[], split = '/') {
             continue;
         }
         if (p === '..') {
-            url = host + (url.replace(host, '').replace(/\/[^\/]+$/, ''));
+            url = host + url.replace(host, '').replace(/\/[^\/]+$/, '');
             continue;
         }
         if (p) {
@@ -141,5 +194,8 @@ export function hasDuplicate(array) {
 }
 
 export function toDashName(name) {
-    return name.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '');
+    return name
+        .replace(/([A-Z])/g, '-$1')
+        .toLowerCase()
+        .replace(/^-/, '');
 }

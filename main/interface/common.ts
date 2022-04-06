@@ -16,3 +16,17 @@ export interface App extends Component {
     replaceMounted?: boolean;
     autoInit?: boolean;
 }
+
+
+// idea interface
+interface RenderScopeResult {
+    replaceParent?: boolean;
+    template?: string;
+}
+
+interface RenderScope<T> {
+    parent?: RenderScope<T>;
+    target?: T;
+
+    render(context?: () => object): RenderScopeResult | void;
+}

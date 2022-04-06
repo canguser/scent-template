@@ -52,9 +52,9 @@ export function replaceNode(node, newNode, parentNode?: Node) {
 }
 
 export function replaceNodes_v2(nodes, newNodes, parentNode?: Node) {
-    nodes = [...Array.isArray(nodes) ? nodes : [nodes]];
+    nodes = [...(Array.isArray(nodes) ? nodes : [nodes])];
     parentNode = parentNode || nodes[0].parentNode;
-    newNodes = [...Array.isArray(newNodes) ? newNodes : [newNodes]];
+    newNodes = [...(Array.isArray(newNodes) ? newNodes : [newNodes])];
     if (parentNode) {
         const fragment = document.createDocumentFragment();
         const placedNode = nodes.splice(nodes.length - 1, 1)[0];
@@ -174,11 +174,13 @@ export function getAttributeInfoMapping(ele: Element, prefixList = [], aliasMapp
         if (parts.length === 1) {
             parts = ['', parts[0]];
         }
-        const [prefix, name] = parts;
+        const [prefix, nameSuffix] = parts;
+        const [name, more] = nameSuffix.split('.');
         return {
             fullName: attr.name,
             prefix: prefix,
             name,
+            more,
             value: attr.value
         };
     });

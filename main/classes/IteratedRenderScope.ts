@@ -23,7 +23,7 @@ export class IteratedRenderScope implements RenderScope {
 
     render(context: () => object): RenderResult {
         const result = execExpression(this.expression, context());
-        const array = Array.isArray(result) ? result : Array.from(result);
+        const array = Array.isArray(result) ? result : Array.from(result || []);
         return {
             replaceParent: true,
             rendererParams: array
@@ -64,8 +64,7 @@ export class IteratedRenderScopeStrategy implements RenderScopeStrategy<Element>
     type: ScopeType = ScopeType.Alienated_UNIQUE;
 
     identityName = 'iterated';
-
-    constructor(public prefixList: string[] = ['s-for']) {}
+    prefixList: string[] = ['s-for']
 
     match(target: Element): RenderScope<Element> | RenderScope<Element>[] | false {
         // get all attributes nodes match prefix

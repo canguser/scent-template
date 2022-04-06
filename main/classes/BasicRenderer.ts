@@ -21,6 +21,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
     realElement: T;
     scopesMapper: { [id: string]: RenderScope } = {};
     virtualElement: T;
+    renderScope: RenderScope<T>;
 
     singleRenderWatchingMapping: {
         [id: string]: {
@@ -54,7 +55,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
         if (this._context) {
             return this._context;
         }
-        if (this.parent){
+        if (this.parent) {
             return this.parent.context;
         }
         return {};
@@ -89,7 +90,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
         }
     }
 
-    updateSubRenderers(renderId: string, target: T, renderResult: RenderResult) {
+    updateSubRenderers(renderId: string, scope: RenderScope<T>, renderResult: RenderResult) {
         const replaceParent = renderResult.replaceParent;
         const params = renderResult.rendererParams;
         const existSubRenderers = this.renderIdChildrenMapping[renderId] || [];
@@ -111,10 +112,10 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                 if (!subRenderer) {
                     const existSubRenderer = existSubRenderers[i];
                     if (!existSubRenderer) {
-                        subRenderer = this.genSubRenderer(param, replaceParent ? undefined : target);
+                        subRenderer = this.genSubRenderer(param, replaceParent ? undefined : scope.target);
                     } else {
                         subRenderer = this.genSubRenderer(param);
-                        const realElement = subRenderer.realElement = existSubRenderer.realElement;
+                        const realElement = (subRenderer.realElement = existSubRenderer.realElement);
                         existSubRenderer.destroy();
                         if (realElement) {
                             unmountDom(realElement);
@@ -122,9 +123,10 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                     }
                     subRenderer.linkParent(this, param.identity, renderId);
                 }
-                if (subRenderer.context){
+                if (subRenderer.context) {
                     subRenderer.context = param.context;
                 }
+                subRenderer.renderScope = scope;
                 return subRenderer;
             });
         }
@@ -140,7 +142,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                     unmountDom(realElement);
                 }
             });
-        this.checkToReplaceSubRenderers(renderId, target, replaceParent);
+        this.checkToReplaceSubRenderers(renderId, scope.target, replaceParent);
     }
 
     abstract checkToReplaceSubRenderers(renderId: string, target: T, replaceParent: boolean): void;
@@ -196,7 +198,7 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
                 this.notifyAfterSingleRender(id);
             }, id);
             if (renderResult) {
-                this.updateSubRenderers(id, scope.target, renderResult);
+                this.updateSubRenderers(id, scope, renderResult);
             }
         } else {
             this.children.forEach((child) => {
@@ -272,5 +274,29 @@ export abstract class BasicRenderer<T> implements Renderer<T> {
 
     unrollSingleRender(id: string) {
         delete this.singleRenderSurroundMapping[id];
+    }
+
+    getLatestSpecifiedScope(type): RenderScope {
+        const scope = this.renderScope;
+        if (scope && scope instanceof type) {
+            return scope;
+        }
+        if (this.parent) {
+            return this.parent.getLatestSpecifiedScope(type);
+        }
+        return null;
+    }
+
+    getChildrenSpecifiedScopes(type): RenderScope[] {
+        const results: RenderScope[] = [];
+        this.children.forEach((child) => {
+            const scope = child.renderScope;
+            if (scope && scope instanceof type) {
+                results.push(scope);
+            }else {
+                results.push(...child.getChildrenSpecifiedScopes(type));
+            }
+        });
+        return results;
     }
 }

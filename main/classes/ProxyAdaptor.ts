@@ -83,5 +83,5 @@ export abstract class ProxyAdaptor {
         }
     }
 
-    abstract create(data: object): object;
+    abstract create(data: object, readonly?: boolean): object;
 }

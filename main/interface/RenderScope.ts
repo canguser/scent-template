@@ -5,7 +5,7 @@ export interface RenderScope<T = any> {
 
     target: T;
 
-    expression: string;
+    expression?: string;
 
     render(context: () => object): void | RenderResult;
 

@@ -1,8 +1,26 @@
 import { ProxyAdaptor } from '../dist/scent.template.esm.js';
-import { ReactiveEffect, reactive } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+import {
+    ReactiveEffect,
+    reactive,
+    readonly as rd,
+    effect
+} from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+
+// window.a = reactive({});
+// window.ar = rd(a);
+//
+// window.ao = reactive({
+//     $props: ar,
+//     c: 3
+// });
+//
+// window.effect = effect;
+//
+// effect(() => {
+//     console.log(window.ao.$props.a);
+// });
 
 export class VueReactiveAdaptor extends ProxyAdaptor {
-
     renderIdList = [];
 
     renderer;
@@ -23,14 +41,16 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
         }
         if (this.renderer) {
             await this.waitNextFrame();
-            if (this.renderIdList.length > 0) {
+            if (this.renderIdList.length > 0){
                 console.time('rendered');
-                console.log('render ids', this.renderIdList);
-                this.renderIdList.forEach((id) => {
-                    this.renderer.renderById(id);
-                });
+                while (this.renderIdList.length > 0) {
+                    const renderIds = this.renderIdList.splice(0);
+                    console.log('render ids', renderIds);
+                    renderIds.forEach((id) => {
+                        this.renderer.renderById(id);
+                    });
+                }
                 console.timeEnd('rendered');
-                this.renderIdList = [];
             }
         }
     }
@@ -45,6 +65,7 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
                 },
                 () => {
                     effect.stop();
+                    // console.log('to render _', id);
                     this.renderIds(id);
                 }
             );
@@ -52,7 +73,10 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
         });
     }
 
-    create(data){
+    create(data, readonly) {
+        if (readonly) {
+            return rd(data);
+        }
         return reactive(data);
     }
 }
