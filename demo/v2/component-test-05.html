@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+    <div id="test">
+        {c}
+        <div>
+            {value2}<c-input @changevalue="e=>value = e.detail" :value="value"></c-input>
+        </div>
+        <c-input s-if="c > 4" @changevalue="e=>value = e.detail" :value="value"></c-input>
+        <div s-for:item="[1]">
+            {item}
+            <c-input @changevalue="e=>value = e.detail" :value="value"></c-input>
+        </div>
+        <button @click="c++">Add C</button>
+
+    </div>
+    </body>
+    <script type="module">
+        import { createComponent, createApp } from '../../dist/scent.template.esm.js';
+        import { VueReactiveAdaptor } from '../VueReactiveAdaptor.js';
+        import {
+            computed,
+            ref
+        } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+
+        const cInput = createComponent({
+            template: `<input type="text" :value="$props.value" @keyup="handleChange" />`,
+            data(props, instance) {
+                return {
+                    handleChange(e) {
+                        e.stopPropagation();
+                        instance.target.dispatchEvent(new CustomEvent('changevalue', { detail: e.target.value }));
+                    }
+                };
+            }
+        });
+
+        window.app = createApp({
+            components: { cInput },
+            mount: '#test',
+            data: () => {
+                const value = ref('test');
+                return {
+                    value,
+                    value2: computed(() => {
+                        return value.value + '2';
+                    }),
+                    c: 1
+                };
+            },
+            adaptor: new VueReactiveAdaptor()
+        });
+    </script>
+</html>

@@ -18,7 +18,7 @@ export function createApp(app: App) {
         },
         autoInit: app.autoInit,
         replaceMounted: app.replaceMounted,
-        context: app.data(),
+        context: app.data?.(),
         adaptor: app.adaptor
     });
 }

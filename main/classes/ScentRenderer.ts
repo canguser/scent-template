@@ -76,17 +76,20 @@ export class ScentRenderer extends BasicRenderer<Node> {
             adaptor = undefined,
             autoInit = true,
             replaceMounted = false,
-            scopeOptions = {}
+            scopeOptions = {},
+            buildScopeStrategies = true
         } = { ...defaultOptions, ...options };
 
         if (renderScopeStrategiesDef) {
             this.renderScopeStrategiesDef = renderScopeStrategiesDef;
-            this.renderScopeStrategies = renderScopeStrategiesDef.map((renderScopeStrategyDef: any) => {
-                let { identity, class: RenderScopeStrategyClass } = renderScopeStrategyDef;
-                const instance = new RenderScopeStrategyClass(this);
-                instance.identityName = identity;
-                return instance;
-            });
+            if (buildScopeStrategies){
+                this.renderScopeStrategies = renderScopeStrategiesDef.map((renderScopeStrategyDef: any) => {
+                    let { identity, class: RenderScopeStrategyClass } = renderScopeStrategyDef;
+                    const instance = new RenderScopeStrategyClass(this);
+                    instance.identityName = identity;
+                    return instance;
+                });
+            }
         }
         this.replaceMounted = replaceMounted;
         this.context = context;
@@ -108,8 +111,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
                 this.template = template.outerHTML;
             }
         } else if (mount) {
-            this.replaceMounted = true;
-            this.template = mount.outerHTML;
+            this.template = this.replaceMounted ? mount.outerHTML : mount.innerHTML;
         }
 
         if (mount) {
@@ -157,7 +159,6 @@ export class ScentRenderer extends BasicRenderer<Node> {
     }
 
     setScopeOption(key: string, value: any) {
-        console.log(key, value);
         const targetScopeStrategy = this.renderScopeStrategies.find((strategy) => strategy.identityName === key);
         if (targetScopeStrategy && typeof targetScopeStrategy.setConfigs === 'function') {
             targetScopeStrategy.setConfigs(value);
@@ -280,7 +281,8 @@ export class ScentRenderer extends BasicRenderer<Node> {
             context: param.context,
             mount: realElement,
             autoInit: false,
-            replaceMounted: true
+            replaceMounted: true,
+            buildScopeStrategies: false
         });
         if (param.scopeOptions) {
             Object.keys(param.scopeOptions).forEach((key) => {

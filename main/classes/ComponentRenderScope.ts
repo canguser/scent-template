@@ -48,7 +48,7 @@ export class ComponentRenderScope implements RenderScope {
         this.ref = target.getAttribute('ref');
         if (this.target) {
             const children = [...this.target.childNodes].filter(
-                (node) => node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE
+                (node) => node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE || node.nodeType === Node.COMMENT_NODE
             );
             if (children.length > 0) {
                 const defaultSlots = (this.slotMapping['body'] = document.createDocumentFragment());

@@ -1,0 +1,117 @@
+html {
+    font-family: ui-serif,Georgia,Cambria,"Times New Roman",Times,serif
+}
+
+html,body{
+    /*width: 100%;*/
+}
+
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.outer-box{
+    text-align: center;
+}
+
+.cards-box{
+    margin: 0 auto;
+    display: inline-block;
+}
+
+.word-card {
+    width: 100px;
+    height: 100px;
+    background-color: #fff;
+    border-radius: 2px;
+    margin: .75rem;
+    display: flex;
+    text-align: center;
+    font-size: 1.25rem;
+    color: #000;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+}
+
+.word-card__tone {
+    position: absolute;
+    top: -0.1rem;
+    left: 0;
+    font-size: 0.6rem;
+    right: 0;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+}
+
+.in {
+    color: #ffa300;
+}
+
+.in.n1 {
+    color: #da6d00;
+}
+
+.in.n2 {
+    color: #da4c00;
+}
+
+.equals {
+    color: #009f0d;
+}
+
+.not {
+    color: black;
+}
+
+.word-card.equals {
+    background-color: #009f0d;
+    color: white;
+}
+
+.word-card.in {
+    background-color: orange;
+    color: white;
+}
+
+.word-card.equals .equals {
+    color: white;
+}
+
+.word-card.in .in,
+.word-card.in .equals {
+    color: white;
+}
+
+.final-box {
+    min-width: 0.5rem;
+}
+
+.word-card__pinyin_initials {
+    letter-spacing: 0.1rem;
+}
+
+.guess-input{
+    height: 2.5rem;
+    width: 100%;
+    padding: .5rem;
+    outline: none;
+    text-align: center;
+}
+
+.nav-bar{
+    width: 100%;
+    height: 3rem;
+    line-height: 3rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    box-shadow: 0 0.15rem .25rem rgba(0,0,0,0.1);
+    margin-bottom: 3rem;
+}

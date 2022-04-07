@@ -5,10 +5,12 @@
         <title>Title</title>
     </head>
     <body>
-        <div id="test">{value2}<input type="text" s-model:value.input="value">
-            <div>a2: <input type="text" s-model:value.input="value"></div>
+    <div id="test">
+        <div s-for:item="list">
+            <c-input :value="item.value"></c-input>
         </div>
-
+        <button @click="list.push({value:1})">Add</button>
+    </div>
     </body>
     <script type="module">
         import { createComponent, createApp } from '../../dist/scent.template.esm.js';
@@ -18,20 +20,16 @@
             ref
         } from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
 
-        // const cInput = createComponent({
-        //     template: `<input type="text" :value="$props.value" />`,
-        //     data(props, element) {
-        //         return {
-        //             handleChange(e) {
-        //                 e.stopPropagation();
-        //                 element.dispatchEvent(new CustomEvent('changevalue', { detail: e.target.value }));
-        //             }
-        //         };
-        //     }
-        // });
+        const cInput = createComponent({
+            template: `<input type="text" :value="$props.value"/>`,
+            data(props, instance) {
+                return {
+                };
+            }
+        });
 
         window.app = createApp({
-            // components: { cInput },
+            components: { cInput },
             mount: '#test',
             data: () => {
                 const value = ref('test');
@@ -39,7 +37,9 @@
                     value,
                     value2: computed(() => {
                         return value.value + '2';
-                    })
+                    }),
+                    c: 1,
+                    list: []
                 };
             },
             adaptor: new VueReactiveAdaptor()

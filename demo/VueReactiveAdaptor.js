@@ -45,7 +45,7 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
                 console.time('rendered');
                 while (this.renderIdList.length > 0) {
                     const renderIds = this.renderIdList.splice(0);
-                    console.log('render ids', renderIds);
+                    // console.log('render ids', renderIds);
                     renderIds.forEach((id) => {
                         this.renderer.renderById(id);
                     });

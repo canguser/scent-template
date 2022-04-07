@@ -4,6 +4,7 @@ import { ScopeType } from '../enum/ScopeType';
 import { getAttributeInfoMapping } from '../utils/DomHelper';
 import { BindRenderScope } from '../classes/BindRenderScope';
 import { EventRenderScope } from '../classes/EventRenderScope';
+import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
 
 export class ModelRenderScopeStrategy implements RenderScopeStrategy<Element> {
     type: ScopeType = ScopeType.Inherited;
@@ -18,8 +19,15 @@ export class ModelRenderScopeStrategy implements RenderScopeStrategy<Element> {
             return false;
         }
         // generate render scopes from attribute nodes
-        return attrInfos.reduce((scopes, attr) => {
+        return attrInfos.reduce((scopes: RenderScope<Element>[], attr) => {
             const { value, name, more } = attr;
+            scopes.push({
+                target,
+                expression: value,
+                render(context: () => object): void {
+                    this.target.value = execExpression(this.expression, context());
+                }
+            });
             scopes.push(new BindRenderScope(value, target, name || 'value'));
             scopes.push(new EventRenderScope(`e=>((${value})=e.detail?e.detail.value:(e.target?e.target.value:null))`, target, more || 'input'));
             // remove all related attributes from target
