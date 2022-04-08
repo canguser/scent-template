@@ -4,7 +4,7 @@ import {
     reactive,
     readonly as rd,
     effect
-} from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+} from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
 
 // window.a = reactive({});
 // window.ar = rd(a);

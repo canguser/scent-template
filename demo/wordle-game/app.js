@@ -1,17 +1,10 @@
 import { createComponent } from '../../dist/scent.template.esm.js';
 import { wordCard } from './components/word-card.js';
 import DICT4 from './data/dict4.js';
-import { pinyin } from 'https://cdn.jsdelivr.net/gh/zh-lx/pinyin-pro@3.8.3/dist/index.esm.js';
-import {
-    reactive,
-    computed,
-    ref
-} from 'https://cdn.jsdelivr.net/npm/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+import { pinyin } from 'https://unpkg.com/pinyin-pro@3.8.3/dist/index.esm.js';
+import { reactive, computed, ref } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
 function getWordsInfo(words) {
     words = words.trim().slice(0, 4);
-    if (words.length !== 4) {
-        return [];
-    }
     const initials = pinyin(words, { type: 'array', pattern: 'initial' });
     const finals = pinyin(words, { type: 'array', pattern: 'final', toneType: 'none' });
     const finals_tone = pinyin(words, { type: 'array', pattern: 'final' });
@@ -129,12 +122,18 @@ export const app = (window.p = createComponent({
             <h2 class="slds-text-heading--medium">猜成语</h2>
         </div>
         <div class="outer-box">
-            <div class="cards-box slds-m-bottom_large">
-                <div s-if="histories.length===0" class="slds-grid slds-gutters">
-                    <div s-for="[1,2,3,4]">
-                        <div class="word-card slds-box_border"></div>
+            <div class="slds-p-top--small">
+                <div s-if="message">
+                    {message}
+                </div>
+                <div class="guess-fixed" s-if="!message" @keydown="e=>{if (e.keyCode === 13) addWords(e)}">
+                    <input :style="showGuessInput?'display:block':'display:none'" class="guess-item" @blur="addWords" type="text" s-model="words">
+                    <div :style="showGuessInput?'display:none':'display:block'" @click="inputGuessWord" class="slds-text-align--center">
+                        <button class="slds-button slds-button_neutral guess-item" type="submit">猜一下</button>
                     </div>
                 </div>
+            </div>
+            <div class="cards-box slds-m-bottom_large">
                 <div s-for:line="histories" class="cards-line slds-grid">
                     <div s-for:item="line">
                         <word-card 
@@ -147,37 +146,49 @@ export const app = (window.p = createComponent({
                         ></word-card>
                     </div>
                 </div>
-                <div class="slds-p-top--small">
-                    <div s-if="message">
-                        {message}
-                    </div>
-                    <div class="" s-if="!message">
-                        <form @submit="addWords">
-                            <input class="guess-input slds-box_border" type="text" s-model="words" placeholder="输入一个四字成语">
-                            <div class="slds-text-align--center slds-p-top--small">
-                                <button class="slds-button slds-button_neutral" type="submit">猜一下</button>
-                            </div>
-                        </form>
+                <div class="slds-grid" @click="inputGuessWord">
+                    <div s-for="[1,2,3,4]">
+                        <word-card 
+                        :word="guessWords[$index].word" 
+                        :initial="guessWords[$index].initial"
+                        :final="guessWords[$index].final"
+                        :num="guessWords[$index].num"
+                        :tonePositions="guessWords[$index].tonePositions"
+                        ></word-card>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="footer"></div>
     `,
-    data() {
+    data(props, instance) {
         const histories = reactive([]);
         const words = ref('');
-        const message= ref('');
+        const message = ref('');
         const startTime = ref(Date.now());
+        const showGuessInput = ref(false);
+        const guessWords = computed(() => {
+            const infos = getWordsInfo(words.value);
+            return [0,1,2,3].map(i=>{
+                const info = infos[i];
+                return {
+                    ...info
+                }
+            })
+        });
         return {
             startTime,
             histories,
             words,
             message,
+            showGuessInput,
+            guessWords,
             addWords(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                showGuessInput.value = false;
                 const newWords = words.value.trim();
-                if (newWords.length !== 4) {
+                if (newWords.length < 4) {
                     return;
                 }
                 const results = checkWords(newWords);
@@ -190,6 +201,17 @@ export const app = (window.p = createComponent({
                     const seconds = Math.floor(usingTime / 1000) % 60;
                     message.value = `恭喜你，猜对了，用时${minutes}分${seconds}秒`;
                 }
+                const outerBox = instance.target.querySelector('.outer-box');
+                setTimeout(() => {
+                    outerBox.scroll(0, outerBox.offsetHeight);
+                }, 100);
+            },
+            inputGuessWord(){
+                showGuessInput.value = true;
+                const input = instance.target.querySelector('input.guess-item');
+                setTimeout(() => {
+                    input.focus();
+                }, 100);
             }
         };
     }
