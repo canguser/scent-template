@@ -8,6 +8,8 @@ import { genUniqueId } from '../utils/NormalUtils';
 export class ChoiceRenderScope implements RenderScope {
     expression: string;
     target: any;
+    lastShow: boolean = false;
+    lastIdentity: string;
 
     constructor(expression: string, target: any) {
         this.expression = expression;
@@ -16,12 +18,14 @@ export class ChoiceRenderScope implements RenderScope {
 
     render(context: () => object): RenderResult {
         const render = !!execExpression(this.expression, context());
+        const identity = this.lastShow && render ? this.lastIdentity : genUniqueId();
+        this.lastShow = render;
         return {
             replaceParent: true,
             rendererParams: render
                 ? [
                       {
-                          identity: genUniqueId(),
+                          identity,
                           template: this.target,
                           context: context()
                       }

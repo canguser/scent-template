@@ -1,9 +1,11 @@
 html {
-    font-family: ui-serif,Georgia,Cambria,"Times New Roman",Times,serif
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 }
 
-html,body{
+html,
+body {
     /*width: 100%;*/
+    background: white;
 }
 
 * {
@@ -12,13 +14,28 @@ html,body{
     -webkit-box-sizing: border-box;
 }
 
-.outer-box{
+@keyframes check-word {
+    0% {
+        opacity: 0.5;
+        transform: rotateY(0deg);
+    }
+    50% {
+        opacity: 0.5;
+        transform: rotateY(90deg);
+    }
+    100% {
+        opacity: 1;
+        transform: rotateY(0deg);
+    }
+}
+
+.outer-box {
     text-align: center;
     height: calc(100vh - 80px - 3.5rem);
     overflow: auto;
 }
 
-.cards-box{
+.cards-box {
     margin: 0 auto;
     display: inline-block;
 }
@@ -28,7 +45,7 @@ html,body{
     height: 70px;
     background-color: #fff;
     border-radius: 2px;
-    margin: .75rem;
+    margin: 0.75rem;
     display: flex;
     text-align: center;
     font-size: 1rem;
@@ -37,9 +54,26 @@ html,body{
     align-content: center;
     justify-content: center;
     align-items: center;
+    animation: check-word 1s ease-in-out forwards;
+    opacity: 1;
+    position: relative;
+    border: 1px solid #e7fad2;
 }
 
-.word-card__word{
+.not-checked {
+    opacity: 0.5;
+    animation: none;
+}
+
+.move-hide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 140px;
+    transform: rotateY(90deg);
+}
+
+.word-card__word {
     font-size: 1.4rem;
     /*font-weight: bold;*/
 }
@@ -94,23 +128,23 @@ html,body{
 }
 
 .final-box {
-    width: .5rem;
+    width: 0.5rem;
 }
 
 .word-card__pinyin_initials {
     letter-spacing: 0.1rem;
 }
 
-.guess-input{
+.guess-input {
     height: 2.5rem;
     width: 100%;
-    padding: .5rem;
+    padding: 0.5rem;
     outline: none;
     text-align: center;
     border: none;
 }
 
-.nav-bar{
+.nav-bar {
     width: 100%;
     height: 3rem;
     line-height: 3rem;
@@ -119,11 +153,11 @@ html,body{
     align-items: center;
     justify-content: center;
     background-color: #fff;
-    box-shadow: 0 0.15rem .25rem rgba(0,0,0,0.1);
-    margin-bottom: .5rem;
+    box-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
 }
 
-.guess-fixed{
+.guess-fixed {
     position: fixed;
     width: 100px;
     height: 100px;
@@ -132,17 +166,17 @@ html,body{
     margin-left: -50px;
 }
 
-.guess-fixed .guess-item{
+.guess-fixed .guess-item {
     width: 100px;
     height: 100px;
     bottom: 20%;
     border: none;
     border-radius: 100%;
-    box-shadow: 0 0.15rem .25rem rgba(0,0,0,0.1);
+    box-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.1);
     outline: none;
     text-align: center;
 }
 
-.footer{
+.footer {
     height: 80px;
 }

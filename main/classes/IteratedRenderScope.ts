@@ -37,6 +37,8 @@ export class IteratedRenderScope implements RenderScope {
                             }
 
                             if (key === this.iteratorItem) {
+                                const result = execExpression(this.expression, context());
+                                const array = Array.isArray(result) ? result : Array.from(result || []);
                                 return array[i];
                             }
                             return context()[key];

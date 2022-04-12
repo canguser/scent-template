@@ -1,10 +1,11 @@
-import { createComponent } from '../../dist/scent.template.esm.js';
+import { Reactivity, Pinyin, Scent } from './lib.js';
 import { wordCard } from './components/word-card.js';
 import DICT4 from './data/dict4.js';
-import { pinyin } from 'https://unpkg.com/pinyin-pro@3.8.3/dist/index.esm.js';
-import { reactive, computed, ref } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+const { createComponent } = Scent;
+const { reactive, computed, ref } = Reactivity;
+const { pinyin } = Pinyin;
 function getWordsInfo(words) {
-    words = words.trim().slice(0, 4);
+    words = (words || '').trim().slice(0, 4);
     const initials = pinyin(words, { type: 'array', pattern: 'initial' });
     const finals = pinyin(words, { type: 'array', pattern: 'final', toneType: 'none' });
     const finals_tone = pinyin(words, { type: 'array', pattern: 'final' });
@@ -126,15 +127,15 @@ export const app = (window.p = createComponent({
                 <div s-if="message">
                     {message}
                 </div>
-                <div class="guess-fixed" s-if="!message" @keydown="e=>{if (e.keyCode === 13) addWords(e)}">
+                <div class="guess-fixed" s-if="!message && words != null" @keydown="e=>{if (e.keyCode === 13) addWords(e)}">
                     <input :style="showGuessInput?'display:block':'display:none'" class="guess-item" @blur="addWords" type="text" s-model="words">
                     <div :style="showGuessInput?'display:none':'display:block'" @click="inputGuessWord" class="slds-text-align--center">
                         <button class="slds-button slds-button_neutral guess-item" type="submit">猜一下</button>
                     </div>
                 </div>
             </div>
-            <div class="cards-box slds-m-bottom_large">
-                <div s-for:line="histories" class="cards-line slds-grid">
+            <div class="cards-box slds-m-bottom_large" @click="inputGuessWord">
+                <div s-for:line="displayedLines" class="cards-line slds-grid">
                     <div s-for:item="line">
                         <word-card 
                         :word="item.word" 
@@ -143,17 +144,6 @@ export const app = (window.p = createComponent({
                         :num="item.num"
                         :tonePositions="item.tonePositions"
                         :checkResult="item.checkResult"
-                        ></word-card>
-                    </div>
-                </div>
-                <div class="slds-grid" @click="inputGuessWord">
-                    <div s-for="[1,2,3,4]">
-                        <word-card 
-                        :word="guessWords[$index].word" 
-                        :initial="guessWords[$index].initial"
-                        :final="guessWords[$index].final"
-                        :num="guessWords[$index].num"
-                        :tonePositions="guessWords[$index].tonePositions"
                         ></word-card>
                     </div>
                 </div>
@@ -168,26 +158,44 @@ export const app = (window.p = createComponent({
         const startTime = ref(Date.now());
         const showGuessInput = ref(false);
         const guessWords = computed(() => {
+            if (words.value === null) {
+                return [];
+            }
             const infos = getWordsInfo(words.value);
-            return [0,1,2,3].map(i=>{
+            return [0, 1, 2, 3].map((i) => {
                 const info = infos[i];
                 return {
                     ...info
-                }
-            })
+                };
+            });
         });
+        const displayedLines = (window.d = computed(() => {
+            if (guessWords.value.length === 0) {
+                return [...histories];
+            }
+            return [...histories, guessWords.value];
+        }));
+        function inputGuessWord() {
+            showGuessInput.value = true;
+            const input = instance.target.querySelector('input.guess-item');
+            if (input) {
+                setTimeout(() => {
+                    input.focus();
+                }, 100);
+            }
+        }
         return {
             startTime,
-            histories,
+            displayedLines,
             words,
             message,
-            showGuessInput,
             guessWords,
+            showGuessInput,
             addWords(e) {
                 e.stopPropagation();
                 e.preventDefault();
                 showGuessInput.value = false;
-                const newWords = words.value.trim();
+                const newWords = (words.value || '').trim();
                 if (newWords.length < 4) {
                     return;
                 }
@@ -206,13 +214,7 @@ export const app = (window.p = createComponent({
                     outerBox.scroll(0, outerBox.offsetHeight);
                 }, 100);
             },
-            inputGuessWord(){
-                showGuessInput.value = true;
-                const input = instance.target.querySelector('input.guess-item');
-                setTimeout(() => {
-                    input.focus();
-                }, 100);
-            }
+            inputGuessWord
         };
     }
 }));

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+        <div id="test">
+            <p1>asd</p1>
+        </div>
+    </body>
+    <script type="module">
+        import { ScentRenderer } from '../../dist/scent.template.esm.js';
+        import { reactive,computed, toRefs, ReactiveEffect, effect } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+        import { VueReactiveAdaptor } from '../VueReactiveAdaptor.js';
+        window.reactive = reactive;
+        window.computed = computed;
+        window.toRefs = toRefs;
+        window.ReactiveEffect = ReactiveEffect;
+        window.effect = effect;
+
+
+        const schools = (window.schools = reactive([
+            { name: '北京大学', id: 1 },
+            { name: '清华大学', id: 2 },
+            { name: '北京交通大学', id: 3 },
+            { name: '北京理工大学', id: 4 },
+            { name: '北京邮电大学', id: 5 },
+            { name: '北京工业大学', id: 6 },
+            { name: '北京航空航天大学', id: 7 },
+            { name: '北京科技大学', id: 8 }
+        ]));
+        const displayedSchools = window.displayedSchools = computed(()=>{
+            console.log('....');
+            return [...schools, {name: 'asd', id:'asdasd'}]
+        });
+
+        const obj = (window.obj = reactive({
+            schools: displayedSchools,
+        }));
+
+        window.renderer = new ScentRenderer({
+            mount: '#test',
+            template: `<div>
+                <div>
+                    <h2>学校</h2>
+                    <p s-for:item="schools" s-key="item.id">{item.name}</p>
+                </div>
+            </div>`,
+            context: obj,
+            adaptor: new VueReactiveAdaptor(),
+            replaceMounted: true
+        });
+    </script>
+</html>

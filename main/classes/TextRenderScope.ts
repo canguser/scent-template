@@ -23,7 +23,10 @@ export class TextRenderScopeStrategy implements RenderScopeStrategy<Element> {
 
     match(target: Element): RenderScope<Element> | false {
         if (target.nodeType === Node.TEXT_NODE && target.parentNode.nodeType !== Node.COMMENT_NODE) {
-            return new TextRenderScope(target, target.textContent);
+            const text = target.textContent;
+            if (text.trim()){
+                return new TextRenderScope(target, target.textContent);
+            }
         }
         return false;
     }

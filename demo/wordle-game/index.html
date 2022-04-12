@@ -11,9 +11,10 @@
         <app><!--Initializing...--></app>
     </body>
     <script type="module">
-        import { createApp } from '../../dist/scent.template.esm.js';
-        import { VueReactiveAdaptor } from '../VueReactiveAdaptor.js';
+        import { Scent, Adaptor } from './lib.js';
         import { app } from './app.js';
+        const { createApp } = Scent;
+        const { VueReactiveAdaptor } = Adaptor;
 
         window.app = createApp({
             components: { app },
