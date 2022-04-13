@@ -199,3 +199,7 @@ export function toDashName(name) {
         .toLowerCase()
         .replace(/^-/, '');
 }
+
+export function toCamelName(name) {
+    return name.replace(/-([a-z])/g, (m, w) => w.toUpperCase());
+}

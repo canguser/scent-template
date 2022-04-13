@@ -5,15 +5,15 @@ const { computed } = Reactivity;
 export const wordCard = createComponent({
     name: 'word-card',
     template: `
-    <div :class="cardClass">
+    <div :class="cardClass" class="word-card">
         <div class="word-card__pinyin slds-grid">
-            <div :class="initialClass">
+            <div :class="initialClass" class="word-card__pinyin_initials">
                 {$props.initial}
             </div>
-            <div :class="finalClass">
+            <div :class="finalClass" class="word-card__pinyin_vowels slds-grid">
                 <div s-for:final="finals" class="final-box slds-is-relative">
                     <span>{final}</span>
-                    <div s-if="$index===$props.tonepositions" :class="numClass">
+                    <div s-if="$index===$props.tonePositions" :class="numClass" class="word-card__tone">
                     <template s-if="$props.num == 1">
                         <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-mis" absolute="" w="86%" left="8%" style="bottom: 0.78rem;"><path d="M3.35 8C2.60442 8 2 8.60442 2 9.35V10.35C2 11.0956 2.60442 11.7 3.35 11.7H17.35C18.0956 11.7 18.7 11.0956 18.7 10.35V9.35C18.7 8.60442 18.0956 8 17.35 8H3.35Z" fill="currentColor" style=""></path><!----><!----><!----></svg>
                     </template>
@@ -36,10 +36,10 @@ export const wordCard = createComponent({
     </div>
   `,
     data(props = {}) {
-        const checkResult = computed(() => props.checkresult || {});
+        const checkResult = computed(() => props.checkResult || {});
         const finals = computed(() =>
             [...(props.final || [])].map((f, index) => {
-                if (index === props.tonepositions && f === 'i' && props.num !== '0') {
+                if (index === props.tonePositions && f === 'i' && props.num !== '0') {
                     return 'ı';
                 }
                 return f;
@@ -54,14 +54,13 @@ export const wordCard = createComponent({
             finals,
             cardClass: computed(() =>
                 [
-                    'word-card',
                     allEquals.value ? 'equals' : allIn.value ? 'in' : '',
-                    props.checkresult ? '' : 'not-checked'
-                ].join(' ')
+                    props.checkResult ? '' : 'not-checked'
+                ]
             ),
-            initialClass: computed(() => ['word-card__pinyin_initials', initialStatus.value].join(' ')),
-            finalClass: computed(() => ['word-card__pinyin_vowels', 'slds-grid', finalStatus.value].join(' ')),
-            numClass: computed(() => ['word-card__tone', numStatus.value].join(' '))
+            initialClass: computed(() => [initialStatus.value]),
+            finalClass: computed(() => [finalStatus.value]),
+            numClass: computed(() => [numStatus.value])
         };
     }
 });

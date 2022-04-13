@@ -29,15 +29,32 @@ body {
     }
 }
 
+@keyframes fade-in {
+    0% {
+        max-height: 0px;
+    }
+    100% {
+        border-width: 1px;
+        max-height: 120px;
+        margin: 0.75rem;
+        visibility: visible;
+    }
+}
+
 .outer-box {
     text-align: center;
-    height: calc(100vh - 80px - 3.5rem);
     overflow: auto;
+    padding-top: 3.5rem;
+}
+
+.cards-box-wrap{
+    display: inline-block;
+    margin: 0 auto;
 }
 
 .cards-box {
-    margin: 0 auto;
-    display: inline-block;
+    display: flex;
+    flex-direction: column-reverse;
 }
 
 .word-card {
@@ -62,7 +79,12 @@ body {
 
 .not-checked {
     opacity: 0.5;
-    animation: none;
+    max-height: 0;
+    margin: 0;
+    visibility: hidden;
+    border-width: 0;
+    animation: fade-in .35s ease-in-out forwards;
+    animation-delay: 1s;
 }
 
 .move-hide {
@@ -155,28 +177,51 @@ body {
     background-color: #fff;
     box-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.1);
     margin-bottom: 0.5rem;
-}
-
-.guess-fixed {
     position: fixed;
-    width: 100px;
-    height: 100px;
-    bottom: -20px;
-    left: 50%;
-    margin-left: -50px;
+    top: 0;
+    left: 0;
+    z-index: 99;
 }
 
-.guess-fixed .guess-item {
-    width: 100px;
-    height: 100px;
-    bottom: 20%;
-    border: none;
-    border-radius: 100%;
-    box-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.1);
+.guess-item{
+    width: 356px;
+    max-width: 90vw;
+    border: 1px solid #e7fad2;
+    height: 3.25rem;
+    margin-bottom: .75rem;
     outline: none;
     text-align: center;
+    font-size: 1rem;
 }
 
 .footer {
     height: 80px;
+}
+
+.header{
+    position: relative;
+}
+
+.tips{
+    position: absolute;
+    color: darkslateblue;
+    display: block;
+    border-radius: 100%;
+    width: 1rem;
+    height: 1rem;
+    line-height: 1rem;
+    font-size: .75rem;
+    border: 1px solid darkslateblue;
+    right: -1.5rem;
+    top: .25rem;
+    cursor: pointer;
+}
+
+.tips:active{
+    background-color: darkslateblue;
+    color: white;
+}
+
+.modal-tips{
+    font-size: 1rem;
 }

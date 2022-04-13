@@ -1,5 +1,6 @@
 import { Reactivity, Pinyin, Scent } from './lib.js';
 import { wordCard } from './components/word-card.js';
+import { basicModal } from './components/basic-modal.js';
 import DICT4 from './data/dict4.js';
 const { createComponent } = Scent;
 const { reactive, computed, ref } = Reactivity;
@@ -117,46 +118,69 @@ function checkWords(words) {
 }
 
 export const app = (window.p = createComponent({
-    components: { wordCard },
+    components: { wordCard, basicModal },
     template: `
         <div class="nav-bar">
-            <h2 class="slds-text-heading--medium">猜成语</h2>
+            <h2 class="header slds-text-heading--medium">猜成语 <span class="tips" @click="showTips=true">?</span></h2>
         </div>
         <div class="outer-box">
             <div class="slds-p-top--small">
                 <div s-if="message">
-                    {message}
+                    {message} <a href="javascript:;" @click="reload">再来一次</a>
                 </div>
-                <div class="guess-fixed" s-if="!message && words != null" @keydown="e=>{if (e.keyCode === 13) addWords(e)}">
-                    <input :style="showGuessInput?'display:block':'display:none'" class="guess-item" @blur="addWords" type="text" s-model="words">
-                    <div :style="showGuessInput?'display:none':'display:block'" @click="inputGuessWord" class="slds-text-align--center">
-                        <button class="slds-button slds-button_neutral guess-item" type="submit">猜一下</button>
-                    </div>
+                <div s-if="!message && words != null" @keydown="e=>{if (e.keyCode === 13) addWords(e)}">
+                    <input class="guess-item" @blur="addWords" type="text" s-model="words" placeholder="请输入一个四字成语">
                 </div>
             </div>
-            <div class="cards-box slds-m-bottom_large" @click="inputGuessWord">
-                <div s-for:line="displayedLines" class="cards-line slds-grid">
-                    <div s-for:item="line">
-                        <word-card 
-                        :word="item.word" 
-                        :initial="item.initial"
-                        :final="item.final"
-                        :num="item.num"
-                        :tonePositions="item.tonePositions"
-                        :checkResult="item.checkResult"
-                        ></word-card>
+            <div class="cards-box-wrap">
+                <div class="cards-box slds-m-bottom_large" @click="inputGuessWord">
+                    <div s-for:line="displayedLines" class="cards-line slds-grid">
+                        <div s-for:item="line">
+                            <word-card 
+                            :word="item.word" 
+                            :initial="item.initial"
+                            :final="item.final"
+                            :num="item.num"
+                            :tone-positions="item.tonePositions"
+                            :check-result="item.checkResult"
+                            ></word-card>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="footer"></div>
+        <basic-modal ref="tipModal" :is-open="showTips">
+            <div slot="header">猜成语（游戏规则）</div>
+            <div class="slds-text-align_center modal-tips">
+                <p>每次进入该页面时，会随机生成一个成语以供猜测</p>
+                <p>你可以输入一个成语来猜测正确答案</p>
+                <p>每次猜测都会为你后面的猜测提供线索</p>
+                <br>
+                <p>每个格子的 汉字、声母、韵母、声调 都会独立进行颜色的指示</p>
+                <br>
+                <p><span class="equals">绿色：</span>代表该 汉字/声母/韵母/声调 出现在正确成语中正确的位置</p>
+                <p><span class="in">橙色：</span>代表该 汉字/声母/韵母/声调 出现再正确成语中不正确的位置</p>
+                <p><span class="not">黑色：</span>代表该 汉字/声母/韵母/声调 是不属于正确成语的任何一部分</p>
+                <br>
+                <p><b>注意：</b></p>
+                <p>1. 输入完待猜测的成语后需要点击回车或点击输入框外以触发成语检查。</p>
+                <p>2. 刷新页面后会重置成语。</p>
+            </div>
+            <div slot="footer" class="slds-grid slds-grid--align-center">
+                <button class="slds-button slds-button_brand" @click="showTips=false,inputGuessWord()">知道了</button>
+            </div>
+        </basic-modal>
     `,
     data(props, instance) {
+        const isFirst = !localStorage.getItem('guess-word-first-time');
+        localStorage.setItem('guess-word-first-time', true);
         const histories = reactive([]);
         const words = ref('');
         const message = ref('');
         const startTime = ref(Date.now());
         const showGuessInput = ref(false);
+        const guessRight = computed(() => !!message.value);
         const guessWords = computed(() => {
             if (words.value === null) {
                 return [];
@@ -170,7 +194,7 @@ export const app = (window.p = createComponent({
             });
         });
         const displayedLines = (window.d = computed(() => {
-            if (guessWords.value.length === 0) {
+            if (guessWords.value.length === 0 || guessRight.value) {
                 return [...histories];
             }
             return [...histories, guessWords.value];
@@ -207,14 +231,14 @@ export const app = (window.p = createComponent({
                     // get minutes an seconds
                     const minutes = Math.floor(usingTime / 1000 / 60);
                     const seconds = Math.floor(usingTime / 1000) % 60;
-                    message.value = `恭喜你，猜对了，用时${minutes}分${seconds}秒`;
+                    message.value = `恭喜你，猜对了，用时${minutes}分${seconds}秒。`;
                 }
-                const outerBox = instance.target.querySelector('.outer-box');
-                setTimeout(() => {
-                    outerBox.scroll(0, outerBox.offsetHeight);
-                }, 100);
             },
-            inputGuessWord
+            inputGuessWord,
+            showTips: ref(isFirst),
+            reload(){
+                window.location.reload();
+            }
         };
     }
 }));

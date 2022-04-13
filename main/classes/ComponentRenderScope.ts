@@ -109,7 +109,7 @@ class SlotRenderScope implements RenderScope<Element> {
                 if (targetChildren.length === 0){
                     unmountDom(this.target);
                 }else {
-                    replaceNode(this.target, [...this.target.childNodes]);
+                    replaceNode(this.target, targetChildren, this.target.parentNode);
                 }
             } else {
                 replaceNode(this.target, this.element);
