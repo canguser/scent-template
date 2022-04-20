@@ -82,7 +82,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
 
         if (renderScopeStrategiesDef) {
             this.renderScopeStrategiesDef = renderScopeStrategiesDef;
-            if (buildScopeStrategies){
+            if (buildScopeStrategies) {
                 this.renderScopeStrategies = renderScopeStrategiesDef.map((renderScopeStrategyDef: any) => {
                     let { identity, class: RenderScopeStrategyClass } = renderScopeStrategyDef;
                     const instance = new RenderScopeStrategyClass(this);
@@ -200,6 +200,7 @@ export class ScentRenderer extends BasicRenderer<Node> {
                         scope.id = genUniqueId();
                         this.scopesMapper[scope.id] = scope;
                     });
+                    node['_scopes'] = scopes.map((scope) => scope);
                     if ([ScopeType.Alienated, ScopeType.Alienated_UNIQUE].includes(strategy.type)) {
                         canGoDeep = false;
                     }

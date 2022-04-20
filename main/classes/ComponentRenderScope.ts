@@ -12,7 +12,7 @@ class ComponentInstance {
 
     getRef(ref: string) {
         const renderer = this.scope.strategy?.renderer;
-        const currentRenderer = renderer?.children.find(item => item.renderScope = this.scope) as ScentRenderer;
+        const currentRenderer = renderer?.children.find((item) => (item.renderScope = this.scope)) as ScentRenderer;
         if (currentRenderer) {
             const scopes = currentRenderer.getChildrenSpecifiedScopes(ComponentRenderScope) as ComponentRenderScope[];
             const scope = scopes.find((c) => c.ref === ref);
@@ -21,6 +21,15 @@ class ComponentInstance {
             }
         }
         return null;
+    }
+
+    async nextTick(fn: () => void) {
+        let renderer = this.scope.strategy?.renderer;
+        if (!renderer){
+            await Promise.resolve();
+            renderer = this.scope.strategy?.renderer;
+        }
+        return renderer?.proxyAdaptor?.nextTick?.(fn) || fn();
     }
 }
 
@@ -39,8 +48,9 @@ export class ComponentRenderScope implements RenderScope {
         this.target = target;
         const attribute = target._bindAttr || (target._bindAttr = strategy.renderer?.proxyAdaptor?.create?.({}) || {});
         this.attributes = strategy.renderer?.proxyAdaptor?.create?.(attribute, true) || attribute;
+        const instance = new ComponentInstance(this.target, this);
         const newContext = {
-            ...(this.component.data?.(this.attributes, new ComponentInstance(this.target, this)) || {}),
+            ...(this.component.data?.call(instance, this.attributes, instance) || {}),
             $props: this.attributes
         };
         this.newContext = strategy.renderer?.proxyAdaptor?.create?.(newContext) || newContext;
@@ -48,7 +58,10 @@ export class ComponentRenderScope implements RenderScope {
         this.ref = target.getAttribute('ref');
         if (this.target) {
             const children = [...this.target.childNodes].filter(
-                (node) => node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE || node.nodeType === Node.COMMENT_NODE
+                (node) =>
+                    node.nodeType === Node.ELEMENT_NODE ||
+                    node.nodeType === Node.TEXT_NODE ||
+                    node.nodeType === Node.COMMENT_NODE
             );
             if (children.length > 0) {
                 const defaultSlots = (this.slotMapping['body'] = document.createDocumentFragment());
@@ -106,9 +119,9 @@ class SlotRenderScope implements RenderScope<Element> {
             const childNodes: Element[] = [...this.element.childNodes] as Element[];
             if (childNodes.length === 0) {
                 const targetChildren = [...this.target.childNodes];
-                if (targetChildren.length === 0){
+                if (targetChildren.length === 0) {
                     unmountDom(this.target);
-                }else {
+                } else {
                     replaceNode(this.target, targetChildren, this.target.parentNode);
                 }
             } else {

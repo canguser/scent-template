@@ -13,18 +13,21 @@ export class TextRenderScope implements RenderScope {
     }
 
     render(context: () => object) {
-        this.target.textContent = template(this.expression, context(), { withFunction: true });
+        const oldContent = this.target.textContent;
+        const newContent = template(this.expression, context(), { withFunction: true });
+        if (oldContent !== newContent) {
+            this.target.textContent = newContent;
+        }
     }
 }
 
 export class TextRenderScopeStrategy implements RenderScopeStrategy<Element> {
-
     identityName = 'text';
 
     match(target: Element): RenderScope<Element> | false {
         if (target.nodeType === Node.TEXT_NODE && target.parentNode.nodeType !== Node.COMMENT_NODE) {
             const text = target.textContent;
-            if (text.trim()){
+            if (text.trim()) {
                 return new TextRenderScope(target, target.textContent);
             }
         }

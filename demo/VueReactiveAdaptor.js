@@ -25,6 +25,8 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
 
     renderer;
 
+    doInTicks = [];
+
     waitNextFrame() {
         return new Promise((resolve) => {
             requestAnimationFrame(() => {
@@ -35,13 +37,15 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
 
     async renderIds(...ids) {
         for (let id of ids) {
-            if (this.renderIdList.indexOf(id) === -1) {
-                this.renderIdList.push(id);
+            const renderIdIndex = this.renderIdList.indexOf(id);
+            if (renderIdIndex > -1) {
+                this.renderIdList.splice(renderIdIndex, 1);
             }
+            this.renderIdList.push(id);
         }
         if (this.renderer) {
             await this.waitNextFrame();
-            if (this.renderIdList.length > 0){
+            if (this.renderIdList.length > 0) {
                 console.time('rendered');
                 while (this.renderIdList.length > 0) {
                     const renderIds = this.renderIdList.splice(0);
@@ -51,6 +55,7 @@ export class VueReactiveAdaptor extends ProxyAdaptor {
                     });
                 }
                 console.timeEnd('rendered');
+                this.execTickDoings();
             }
         }
     }

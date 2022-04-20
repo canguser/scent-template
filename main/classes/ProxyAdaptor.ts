@@ -11,6 +11,8 @@ export abstract class ProxyAdaptor {
 
     toRenderFields = [];
 
+    doingsInTick: Array<() => void> = [];
+
     adapt(renderer: Renderer) {
         this.renderer = renderer;
         this.initialize();
@@ -84,4 +86,20 @@ export abstract class ProxyAdaptor {
     }
 
     abstract create(data: object, readonly?: boolean): object;
+
+    execTickDoings() {
+        this.doingsInTick.forEach((doing) => {
+            doing();
+        });
+        this.doingsInTick = [];
+    }
+
+    public nextTick(doing: () => void): Promise<void> {
+        if (doing && typeof doing === 'function') {
+            this.doingsInTick.push(doing);
+        }
+        return new Promise((resolve) => {
+            this.doingsInTick.push(resolve);
+        });
+    }
 }

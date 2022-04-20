@@ -117,6 +117,8 @@ function checkWords(words) {
     });
 }
 
+window.Scent = Scent;
+
 export const app = (window.p = createComponent({
     components: { wordCard, basicModal },
     template: `
@@ -174,12 +176,11 @@ export const app = (window.p = createComponent({
     `,
     data(props, instance) {
         const isFirst = !localStorage.getItem('guess-word-first-time');
-        localStorage.setItem('guess-word-first-time', true);
+        localStorage.setItem('guess-word-first-time', 'true');
         const histories = reactive([]);
         const words = ref('');
         const message = ref('');
         const startTime = ref(Date.now());
-        const showGuessInput = ref(false);
         const guessRight = computed(() => !!message.value);
         const guessWords = computed(() => {
             if (words.value === null) {
@@ -200,25 +201,27 @@ export const app = (window.p = createComponent({
             return [...histories, guessWords.value];
         }));
         function inputGuessWord() {
-            showGuessInput.value = true;
             const input = instance.target.querySelector('input.guess-item');
             if (input) {
-                setTimeout(() => {
-                    input.focus();
-                }, 100);
+                input.focus();
             }
         }
+
+        this.nextTick(() => {
+            if (!isFirst) {
+                inputGuessWord();
+            }
+        });
+
         return {
             startTime,
             displayedLines,
             words,
             message,
             guessWords,
-            showGuessInput,
             addWords(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                showGuessInput.value = false;
                 const newWords = (words.value || '').trim();
                 if (newWords.length < 4) {
                     return;
@@ -236,7 +239,7 @@ export const app = (window.p = createComponent({
             },
             inputGuessWord,
             showTips: ref(isFirst),
-            reload(){
+            reload() {
                 window.location.reload();
             }
         };
