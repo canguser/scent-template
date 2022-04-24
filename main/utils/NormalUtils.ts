@@ -1,3 +1,6 @@
+import { configureMerge } from '@rapidly/utils/lib/commom/object/merge';
+import { ScentObject } from './ScentObject';
+
 export function waitImmediately(context?: any, apiName: string = '_waitImmediatelyPS') {
     if (!context[apiName]) {
         context[apiName] = new Promise((resolve) => {
@@ -203,3 +206,7 @@ export function toDashName(name) {
 export function toCamelName(name) {
     return name.replace(/-([a-z])/g, (m, w) => w.toUpperCase());
 }
+
+export const merge = configureMerge({
+    integralClasses: [ScentObject]
+});
