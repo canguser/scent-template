@@ -1,8 +1,7 @@
 import { merge } from '../utils/NormalUtils';
 import { configuration } from '../configure';
-import { BasicScope } from '../scopes/BasicScope';
-import { TextScope } from '../scopes/TextScope';
-import { IfScope } from '../scopes/IfScope';
+import { TextScope, TextScopeOptions } from '../scopes/TextScope';
+import { IfScope, IfScopeOptions } from '../scopes/IfScope';
 import { ScentObject } from '../utils/ScentObject';
 import { ScopeManager } from '../scopes/ScopeManager';
 
@@ -19,7 +18,12 @@ type Scopes = {
     bindIf: IfScope;
 };
 
-type ScopeBuilder<E> = { [key in keyof Scopes]: (ele: E, options?: any) => Scopes[key] | undefined };
+type ScopeOptions = {
+    bindText: TextScopeOptions;
+    bindIf: IfScopeOptions;
+};
+
+type ScopeBuilder<E> = { [key in keyof Scopes]: (ele: E, options?: ScopeOptions[key]) => string };
 
 export abstract class Context<
     T extends object = object,
