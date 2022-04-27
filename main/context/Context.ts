@@ -39,7 +39,6 @@ export abstract class Context<
     public get scope(): ScopeBuilder<E> {
         return new Proxy<ScopeBuilder<E>>({} as ScopeBuilder<E>, {
             get: (target: {}, p: string | symbol): any => {
-                console.log(this);
                 const scopes = this.configuration.get('scopes', {});
                 if (typeof p === 'string') {
                     // get scope name by splice string after 'bind' and convert to lowercase initial

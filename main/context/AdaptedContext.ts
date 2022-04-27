@@ -1,13 +1,13 @@
 import { Context } from './Context';
+import { ScopeManager } from '../scopes/ScopeManager';
+import { ProxyAdaptor } from './ProxyAdaptor';
 
 export class AdaptedContext extends Context {
-
     protected buildContext(context: object): object {
-        return context;
+        return this.adaptor.create(context);
     }
 
-    get adaptor(): string {
-        return this.configuration.get('proxyAdaptor');
+    get adaptor(): ProxyAdaptor {
+        return this.configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
     }
-
 }

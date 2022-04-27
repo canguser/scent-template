@@ -6,27 +6,29 @@
     </head>
     <body>
         <div class="q">
-            h1:
-            <h1>{{title}}</h1>
+            <span></span>
+            <h1></h1>
         </div>
         <script type="module">
-            import { AdaptedContext, configuration } from '../../dist/scent.template.esm.js';
-            window.configuration = configuration;
-            window.scopeManager = configuration.get('instances.scopeManager');
-            const context = (window.context = new AdaptedContext(
-                (window.c = { title: 'Hello World', list: [1, 2, 3, 4] })
-            ));
+            import { AdaptedContext } from '../../dist/scent.template.esm.js';
+            import '../VueReactiveAdaptor.js';
+            const context = new AdaptedContext({ title: 'Hello World', list: [1, 2, 3, 4] });
+            window.context = context.context;
 
             context.scope.bindFor(document.querySelector('.q'), {
                 of: 'list',
                 item: 'item',
                 subScopes: (ele, ctx) => {
                     const h1 = ele.querySelector('h1');
-                    const id = ctx.scope.bindText(h1, {
-                        expression: '{item}'
-                    });
-                    console.log(id);
-                    return [id];
+                    const span = ele.querySelector('span');
+                    return [
+                        ctx.scope.bindText(h1, {
+                            expression: '{item}'
+                        }),
+                        ctx.scope.bindText(span, {
+                            expression: '{title}'
+                        })
+                    ];
                 }
             });
         </script>

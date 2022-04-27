@@ -22,3 +22,4 @@ export * from './scopes/TextScope';
 export * from './scopes/ScopeManager';
 export * from './scopes/IfScope';
 export * from './context/AdaptedContext';
+export * from './context/ProxyAdaptor';
