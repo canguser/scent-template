@@ -3,6 +3,7 @@ import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
 import { ScopeManager } from './scopes/ScopeManager';
 import { IfScope } from './scopes/IfScope';
 import { TextScope } from './scopes/TextScope';
+import { ForScope } from './scopes/ForScope';
 
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
@@ -11,7 +12,8 @@ configuration.override({
     },
     scopes: {
         if: IfScope,
-        text: TextScope
+        text: TextScope,
+        for: ForScope
     }
 });
 

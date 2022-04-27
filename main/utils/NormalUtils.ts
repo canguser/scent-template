@@ -210,3 +210,110 @@ export function toCamelName(name) {
 export const merge = configureMerge({
     integralClasses: [ScentObject]
 });
+
+export function diffFrom(keys, newKeys) {
+    const newKeyDiffResults = [];
+    const newKeysWithoutNew = [];
+
+    for (let i = 0; i < newKeys.length; i++) {
+        const newKey = newKeys[i];
+        if (keys.indexOf(newKey) === -1) {
+            newKeyDiffResults.push({
+                add: true,
+                key: newKey,
+                index: i
+            });
+        } else {
+            newKeysWithoutNew.push(newKey);
+        }
+    }
+
+    const newKeysIndexMap = newKeysWithoutNew.reduce((map, key, index) => {
+        map[key] = index;
+        return map;
+    }, {});
+
+    const diffResults = [];
+    const keysWithoutDelete = [];
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const newIndex = newKeysIndexMap[key];
+        if (newIndex == null) {
+            diffResults.unshift({
+                key,
+                remove: true,
+                index: i
+            });
+        } else {
+            keysWithoutDelete.push(key);
+        }
+    }
+
+    for (let i = 0; i < keysWithoutDelete.length; i++) {
+        const key = keysWithoutDelete[i];
+        const newIndex = newKeysIndexMap[key];
+        if (newIndex === i) {
+            /*diffResults.push({
+                change: false,
+                key,
+                index: i
+            });*/
+        } else if (newIndex !== i) {
+            diffResults.push({
+                change: true,
+                key,
+                oldIndex: i,
+                index: newIndex
+            });
+        }
+    }
+
+    diffResults.push(...newKeyDiffResults);
+    const realDiffResults = [];
+    for (let i = 0; i < diffResults.length; i++) {
+        const diff = diffResults[i];
+        if (diff.change) {
+            const lastDiff = realDiffResults[realDiffResults.length - 1];
+            if (
+                lastDiff &&
+                diff.index - 1 === lastDiff.offsetIndex &&
+                diff.oldIndex - 1 === lastDiff.offsetOldIndex
+            ) {
+                lastDiff.keys.push(diff.key);
+                lastDiff.offsetIndex = diff.index;
+                lastDiff.offsetOldIndex = diff.oldIndex;
+                continue;
+            }
+            diff.keys = [diff.key];
+            diff.offsetIndex = diff.index;
+            diff.offsetOldIndex = diff.oldIndex;
+            delete diff.key;
+        } else if (diff.add) {
+            const lastDiff = realDiffResults[realDiffResults.length - 1];
+            if (lastDiff && diff.index - 1 === lastDiff.offsetIndex) {
+                lastDiff.keys.push(diff.key);
+                lastDiff.offsetIndex = diff.index;
+                continue;
+            }
+            diff.keys = [diff.key];
+            diff.offsetIndex = diff.index;
+            delete diff.key;
+        }
+        realDiffResults.push(diff);
+    }
+
+    return realDiffResults;
+}
+
+export function appendNodeAfter(node, after) {
+    const parent = after.parentNode;
+    if (parent) {
+        const nextSibling = after.nextSibling;
+        if (nextSibling) {
+            parent.insertBefore(node, nextSibling);
+        } else {
+            parent.appendChild(node);
+        }
+    }
+}

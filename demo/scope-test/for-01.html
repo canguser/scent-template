@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+        <div class="q">
+            h1:
+            <h1>{{title}}</h1>
+        </div>
+        <script type="module">
+            import { AdaptedContext, configuration } from '../../dist/scent.template.esm.js';
+            window.configuration = configuration;
+            window.scopeManager = configuration.get('instances.scopeManager');
+            const context = (window.context = new AdaptedContext(
+                (window.c = { title: 'Hello World', list: [1, 2, 3, 4] })
+            ));
+
+            context.scope.bindFor(document.querySelector('.q'), {
+                of: 'list',
+                item: 'item',
+                subScopes: (ele, ctx) => {
+                    const h1 = ele.querySelector('h1');
+                    const id = ctx.scope.bindText(h1, {
+                        expression: '{item}'
+                    });
+                    console.log(id);
+                    return [id];
+                }
+            });
+        </script>
+    </body>
+</html>

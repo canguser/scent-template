@@ -4,6 +4,7 @@ import { TextScope, TextScopeOptions } from '../scopes/TextScope';
 import { IfScope, IfScopeOptions } from '../scopes/IfScope';
 import { ScentObject } from '../utils/ScentObject';
 import { ScopeManager } from '../scopes/ScopeManager';
+import { ForScope, ForScopeOptions } from '../scopes/ForScope';
 
 export interface ContextOptions {
     configuration?: typeof configuration;
@@ -16,11 +17,13 @@ const defaultOptions: ContextOptions = {
 type Scopes = {
     bindText: TextScope;
     bindIf: IfScope;
+    bindFor: ForScope;
 };
 
 type ScopeOptions = {
     bindText: TextScopeOptions;
     bindIf: IfScopeOptions;
+    bindFor: ForScopeOptions;
 };
 
 type ScopeBuilder<E> = { [key in keyof Scopes]: (ele: E, options?: ScopeOptions[key]) => string };
@@ -60,7 +63,7 @@ export abstract class Context<
         return this.configuration.get<ScopeManager>('instances.scopeManager');
     }
 
-    protected constructor(context?: T, options?: Options) {
+    public constructor(context?: T, options?: Options) {
         super();
         this.options = merge({} as Options, defaultOptions, options);
         this.context = this.buildContext(context || ({} as T));

@@ -3,6 +3,7 @@ import { merge } from '../utils/NormalUtils';
 import { Context } from '../context/Context';
 import { ScopeManager } from './ScopeManager';
 import { ScentObject } from '../utils/ScentObject';
+import { groupBy } from '@rapidly/utils/lib/array/groupBy';
 
 export interface BasicScopeOptions {
     configuration?: typeof configuration;
@@ -24,10 +25,10 @@ export abstract class BasicScope<
     protected options: Option;
     protected context: C;
     private subScopes: { [key: string]: string[] } = {};
-    private existedSubScopeInfos: { [key: string]: { target: E; extra?: any } } = {};
-    private subScopeInfos: { [key: string]: { target: E; extra?: any } };
+    protected existedSubScopeInfos: Array<{ key: string; target: E; extra?: any }> = [];
+    private subScopeInfos: Array<{ key: string; target: E; extra?: any }> = [];
 
-    protected constructor(target: E, context: C, options?: Option) {
+    public constructor(target: E, context: C, options?: Option) {
         super();
         this.target = target;
         this.context = context;
@@ -48,37 +49,59 @@ export abstract class BasicScope<
     }
 
     protected putScopeInfo(key: string, target: E, extra?: any) {
-        if (!this.subScopeInfos){
-            this.subScopeInfos = {};
-        }
-        this.subScopeInfos[key] = { target, extra };
+        this.subScopeInfos.push({ key, target, extra });
     }
 
-    protected putScopeInfos(infos: { [key: string]: { target: E; extra?: any } }) {
-        this.subScopeInfos = Object.assign(this.subScopeInfos || {}, infos);
+    protected putScopeInfos(infos: { key: string; target: E; extra?: any }[]) {
+        this.subScopeInfos.push(...infos);
     }
 
     protected buildToRenderScopeInfos() {
-        const existKeys = Object.keys(this.existedSubScopeInfos || {});
-        const subScopeInfos = this.subScopeInfos || {};
-        const allKeys = Object.keys(subScopeInfos);
-        const newScopeInfos = allKeys.reduce((result, key) => {
-            if (!existKeys.includes(key)) {
-                result[key] = subScopeInfos[key];
+        let subScopeInfos = this.subScopeInfos || [];
+        // check if key is duplicated
+        const hasDuplicated = subScopeInfos.some((info, index) =>
+            subScopeInfos.some((info2, index2) => index !== index2 && info.key === info2.key)
+        );
+        if (hasDuplicated) {
+            subScopeInfos = subScopeInfos.map((info, i) => {
+                info.key = i + '';
+                return info;
+            });
+            console.warn(
+                `[${this.constructor.name}] has duplicated subScope key, so we use index as key, please check your code.`
+            );
+        }
+        // build new scope infos
+        const newScopeInfos = [];
+        const toRenderSubScopeInfos = [];
+        const allNewKeys = [];
+        const existedScopeInfosGroupedByKey = groupBy(this.existedSubScopeInfos, 'key');
+        for (const info of subScopeInfos) {
+            allNewKeys.push(info.key);
+            if (existedScopeInfosGroupedByKey.has(info.key)) {
+                const existedScopeInfo = [...existedScopeInfosGroupedByKey.get(info.key)][0];
+                if (existedScopeInfo) {
+                    newScopeInfos.push(existedScopeInfo);
+                    continue;
+                }
             }
-            return result;
-        }, {} as { [key: string]: { target: E; extra?: any } });
-        const toDeleteKeys = existKeys.filter((key) => !allKeys.includes(key));
-        toDeleteKeys.forEach((key) => {
+            toRenderSubScopeInfos.push(info);
+            newScopeInfos.push(info);
+        }
+        // get all keys not existed in new scope infos
+        const toRemoveKeys = subScopeInfos.map((i) => i.key).filter((key) => !allNewKeys.includes(key));
+
+        toRemoveKeys.forEach((key) => {
             delete this.existedSubScopeInfos[key];
             const existedScopes = this.subScopes[key] || [];
             existedScopes.forEach((scope) => {
                 this.scopeManager.unregisterScope(scope);
             });
         });
-        Object.assign(this.existedSubScopeInfos, newScopeInfos);
-        this.subScopeInfos = undefined;
-        return newScopeInfos;
+        this.existedSubScopeInfos = newScopeInfos;
+        this.subScopeInfos = [];
+        console.log(toRenderSubScopeInfos);
+        return toRenderSubScopeInfos;
     }
 
     protected getContextObject(): object {
@@ -105,11 +128,9 @@ export abstract class BasicScope<
         const subScopes = this.options.subScopes;
         if (typeof subScopes === 'function') {
             const scopes = [];
-
             const newScopeInfos = this.buildToRenderScopeInfos();
-            Object.keys(newScopeInfos).forEach((key) => {
-                const scopeInfo = newScopeInfos[key];
-                const { target, extra } = scopeInfo;
+            newScopeInfos.forEach((scopeInfo) => {
+                const { target, extra, key } = scopeInfo;
                 const newSubScopes = subScopes(target, this.getSubContext(key, extra));
                 if (newSubScopes) {
                     scopes.push(...newSubScopes);
