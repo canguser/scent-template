@@ -4,6 +4,7 @@ import { ScopeManager } from './scopes/ScopeManager';
 import { IfScope } from './scopes/IfScope';
 import { TextScope } from './scopes/TextScope';
 import { ForScope } from './scopes/ForScope';
+import { TextStrategy } from './stragtegies/TextStrategy';
 
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
@@ -14,7 +15,8 @@ configuration.override({
         if: IfScope,
         text: TextScope,
         for: ForScope
-    }
+    },
+    strategies: [new TextStrategy()]
 });
 
 export * from './configure';
@@ -23,3 +25,4 @@ export * from './scopes/ScopeManager';
 export * from './scopes/IfScope';
 export * from './context/AdaptedContext';
 export * from './context/ProxyAdaptor';
+export * from './component';

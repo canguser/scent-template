@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+        <div class="q">
+            <span></span>
+            <h1></h1>
+        </div>
+        <script type="module">
+            import { ref } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+            import { defineComponent } from '../../dist/scent.template.esm.js';
+            import '../VueReactiveAdaptor.js';
+            const App = defineComponent({
+                template: '<div class="q"><span></span><h1>{title}</h1></div>',
+                setup() {
+                    const title = (window.title = ref('Hello World'));
+                    return {
+                        title
+                    };
+                }
+            });
+            const ele = document.querySelector('.q');
+            ele.appendChild(App());
+        </script>
+    </body>
+</html>

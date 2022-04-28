@@ -12,18 +12,32 @@
         <script type="module">
             import { AdaptedContext } from '../../dist/scent.template.esm.js';
             import '../VueReactiveAdaptor.js';
-            const context = new AdaptedContext({ title: 'Hello World', list: [1, 2, 3, 4] });
+            const context = new AdaptedContext({
+                title: 'Hello World',
+                list: [
+                    { name: 'John', age: 20, id: 'o1' },
+                    { name: 'Mary', age: 30, id: 'o2' },
+                    { name: 'Peter', age: 40, id: 'o3' },
+                    { name: 'Paul', age: 50, id: 'o4' },
+                    { name: 'James', age: 60, id: 'o5' },
+                    { name: 'Jane', age: 70, id: 'o6' },
+                    { name: 'Jack', age: 80, id: 'o7' },
+                    { name: 'Mike', age: 90, id: 'o8' }
+                ]
+            });
             window.context = context.context;
 
             context.scope.bindFor(document.querySelector('.q'), {
                 of: 'list',
                 item: 'item',
+                key: 'id',
                 subScopes: (ele, ctx) => {
                     const h1 = ele.querySelector('h1');
                     const span = ele.querySelector('span');
+                    console.log('render for');
                     return [
                         ctx.scope.bindText(h1, {
-                            expression: '{item}'
+                            expression: 'Name: {item.name} Age: {item.age}'
                         }),
                         ctx.scope.bindText(span, {
                             expression: '{title}'
