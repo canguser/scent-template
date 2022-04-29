@@ -164,7 +164,7 @@ export function defineComponent(options: ComponentOptions): ComponentFn {
             instance
         });
         if (parentInstance && refName) {
-            parentInstance.setSubContextByRef(refName, adaptor.create(context, true));
+            parentInstance.setSubContextByRef(refName, adaptor.create(context.contextGetter(), true));
         }
         component.appendChild(result);
         return component;

@@ -27,9 +27,9 @@
             const App = defineComponent({
                 components: { Test },
                 template: `
-                <div class="q"><span><test :title="title"></test></span><h1 s-for:item="list" s-key="name">{item.name}</h1></div>
+                <div class="q"><span><test ref="test" :title="title"></test></span><h1 s-for:item="list" s-key="name" @click="handleClick">{item.name}</h1></div>
                 `,
-                setup() {
+                setup(props, instance) {
                     const title = (window.title = ref('Hello World'));
                     const list = (window.l = reactive([
                         { name: 'John', age: 20, id: 'o1' },
@@ -43,7 +43,10 @@
                     ]));
                     return {
                         title,
-                        list
+                        list,
+                        handleClick(){
+                            console.log(instance.getSubContextByRef('test'))
+                        }
                     };
                 }
             });
