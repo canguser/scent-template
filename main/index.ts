@@ -6,6 +6,11 @@ import { TextScope } from './scopes/TextScope';
 import { ForScope } from './scopes/ForScope';
 import { TextStrategy } from './stragtegies/TextStrategy';
 import { ForStrategy } from './stragtegies/ForStrategy';
+import { AttrStrategy } from './stragtegies/AttrStrategy';
+import { AttrScope } from './scopes/AttrScope';
+import { IfStrategy } from './stragtegies/IfStrategy';
+import { EventScope } from './scopes/EventScope';
+import { EventStrategy } from './stragtegies/EventStrategy';
 
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
@@ -15,9 +20,11 @@ configuration.override({
     scopes: {
         if: IfScope,
         text: TextScope,
-        for: ForScope
+        for: ForScope,
+        attr: AttrScope,
+        event: EventScope
     },
-    strategies: [new ForStrategy(), new TextStrategy()]
+    strategies: [new IfStrategy(), new ForStrategy(), new AttrStrategy(), new EventStrategy(), new TextStrategy()]
 });
 
 export * from './configure';

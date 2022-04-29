@@ -5,16 +5,38 @@ import { toDashName, traversingTreeNode } from '../utils/NormalUtils';
 import { BasicStrategy } from '../stragtegies/BasicStrategy';
 import { StrategyType } from '../enum/StrategyType';
 import { Context } from '../context/Context';
-import { clearNodeAttribute, getNodeAttribute } from '../utils/DomHelper';
+import { clearNodeAttribute, getAttrObject, getNodeAttribute } from '../utils/DomHelper';
 
-export type ComponentFn = (props: any, slotsParent?: Element) => DocumentFragment;
+class ComponentInstance {
+    private refContextMap: Map<string, any> = new Map();
+
+    constructor(public target: Element) {}
+
+    getSubContextByRef(ref: string): any {
+        return this.refContextMap.get(ref);
+    }
+
+    setSubContextByRef(ref: string, context: any) {
+        this.refContextMap.set(ref, context);
+    }
+}
+
+export interface ComponentFnOptions {
+    slotsParent?: Element;
+    alias?: string;
+    parentInstance?: ComponentInstance;
+    refName?: string;
+}
+
+export type ComponentFn = (props: any, options?: ComponentFnOptions) => Element;
 
 export interface ComponentOptions {
+    name?: string;
     components?: {
         [key: string]: ComponentFn;
     };
     template: string;
-    setup?: (props, target?: any) => object;
+    setup?: (props: any, instance?: ComponentInstance) => object;
 }
 
 export interface RenderStrategyOptions {
@@ -24,26 +46,34 @@ export interface RenderStrategyOptions {
     target: DocumentFragment;
     context: Context;
     slotsParent?: Element;
+    instance?: ComponentInstance;
 }
 
 function renderComponent(
     target: Element,
     components: {
         [key: string]: ComponentFn;
-    }
+    },
+    parentComponent: ComponentInstance
 ) {
     const dashedComponents = {};
     Object.keys(components).forEach((key) => {
         dashedComponents[toDashName(key)] = components[key];
     });
     if (target.nodeType === Node.ELEMENT_NODE) {
+        const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
         for (const key in dashedComponents) {
             if ((target.tagName || '').toLowerCase() === key) {
                 const componentFn = dashedComponents[key];
-                const component = componentFn({}, target);
-                const ele = document.createElement(key);
-                ele.appendChild(component);
-                target.parentNode.replaceChild(ele, target);
+                const props = getAttrObject(target);
+                const reactProps = (target['_bindAttr'] = adaptor.create(props));
+                const component = componentFn(reactProps, {
+                    slotsParent: target,
+                    parentInstance: parentComponent,
+                    alias: key,
+                    refName: target.getAttribute('ref')
+                });
+                target.parentNode.replaceChild(component, target);
                 return true;
             }
         }
@@ -79,20 +109,20 @@ function renderSlots(target: Element, slotsParent?: Element) {
 }
 
 export function renderByStrategy(options: RenderStrategyOptions): string[] {
-    const { target, components, context } = options;
+    const { target, components, context, instance } = options;
     const _strategies = configuration.get<BasicStrategy[]>('strategies') || [];
     const results: string[] = [];
     traversingTreeNode(target, 'childNodes', (node) => {
         let canGoDeep = true;
-        renderComponent(node, components || {});
+        renderComponent(node, components || {}, instance);
         if (renderSlots(node, options.slotsParent)) {
             return false;
         }
         for (let strategy of _strategies) {
             let result = strategy.match(node as Element, context, (_target, _context) => {
                 return renderByStrategy({
+                    ...options,
                     target: _target,
-                    components,
                     context: _context || context
                 });
             });
@@ -112,20 +142,31 @@ export function renderByStrategy(options: RenderStrategyOptions): string[] {
 }
 
 export function defineComponent(options: ComponentOptions): ComponentFn {
-    return (props: any, slotsParent?: Element) => {
+    return (props: any, fnOptions?: ComponentFnOptions) => {
+        const { slotsParent, parentInstance, refName, alias } = fnOptions || {};
         props = props || {};
         const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
         const template = document.createElement('template');
         template.innerHTML = options.template;
+        const readonlyProps = adaptor.create(props, true);
+        const component = document.createElement(alias || options.name || 'App');
+        const instance = new ComponentInstance(component);
         const context = new AdaptedContext({
-            ...options.setup?.(props),
-            $props: adaptor.create(props, true)
+            ...options.setup?.(readonlyProps, instance),
+            $props: readonlyProps
         });
-
         const result = template.content;
-
-        renderByStrategy({ target: result, components: options.components, context, slotsParent });
-
-        return result;
+        renderByStrategy({
+            target: result,
+            components: options.components,
+            context,
+            slotsParent,
+            instance
+        });
+        if (parentInstance && refName) {
+            parentInstance.setSubContextByRef(refName, adaptor.create(context, true));
+        }
+        component.appendChild(result);
+        return component;
     };
 }

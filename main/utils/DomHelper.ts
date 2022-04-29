@@ -1,5 +1,6 @@
 import { isBlank } from '@rapidly/utils/lib/commom/string/isBlank';
 import { isNotBlank } from '@rapidly/utils/lib/commom/string/isNotBlank';
+import { toCamelName } from './NormalUtils';
 
 export function getAllElements(ele: Element): Element[] {
     return [ele].concat([...(ele.children || [])].map((e) => getAllElements(e)).flat());
@@ -165,14 +166,14 @@ export function getAttributeNodes(ele: Element, prefixList) {
     return Array.from(attributes).filter((attr) => prefixList.some((prefix) => attr.name.startsWith(prefix)));
 }
 
-export function getNodeAttribute(node: Node, name: string){
+export function getNodeAttribute(node: Node, name: string) {
     if (node.nodeType === Node.ELEMENT_NODE) {
         return (node as Element).getAttribute(name);
     }
     return null;
 }
 
-export function clearNodeAttribute(node: Node, name: string){
+export function clearNodeAttribute(node: Node, name: string) {
     if (node.nodeType === Node.ELEMENT_NODE) {
         (node as Element).removeAttribute(name);
     }
@@ -213,4 +214,19 @@ export function getAttributeInfoMapping(ele: Element, prefixList = [], aliasMapp
         });
     });
     return result;
+}
+
+export function getAttrObject(target: Node) {
+    if (target.nodeType === Node.ELEMENT_NODE) {
+        const ele = target as Element;
+        const attrNames = ele.getAttributeNames();
+        return attrNames.reduce((result, name) => {
+            const value = ele.getAttribute(name);
+            if (value) {
+                result[toCamelName(name)] = value;
+            }
+            return result;
+        }, {});
+    }
+    return {};
 }

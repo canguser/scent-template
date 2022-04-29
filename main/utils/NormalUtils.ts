@@ -275,11 +275,7 @@ export function diffFrom(keys, newKeys) {
         const diff = diffResults[i];
         if (diff.change) {
             const lastDiff = realDiffResults[realDiffResults.length - 1];
-            if (
-                lastDiff &&
-                diff.index - 1 === lastDiff.offsetIndex &&
-                diff.oldIndex - 1 === lastDiff.offsetOldIndex
-            ) {
+            if (lastDiff && diff.index - 1 === lastDiff.offsetIndex && diff.oldIndex - 1 === lastDiff.offsetOldIndex) {
                 lastDiff.keys.push(diff.key);
                 lastDiff.offsetIndex = diff.index;
                 lastDiff.offsetOldIndex = diff.oldIndex;
@@ -306,14 +302,11 @@ export function diffFrom(keys, newKeys) {
     return realDiffResults;
 }
 
-export function appendNodeAfter(node, after) {
-    const parent = after.parentNode;
-    if (parent) {
-        const nextSibling = after.nextSibling;
-        if (nextSibling) {
-            parent.insertBefore(node, nextSibling);
-        } else {
-            parent.appendChild(node);
-        }
+export function mapObject<T extends object>(obj: T, fn: (value, key) => object): any {
+    const newObj = {};
+    for (const key of Object.keys(obj)) {
+        const result = fn(obj[key], key) || {};
+        Object.assign(newObj, result);
     }
+    return newObj;
 }

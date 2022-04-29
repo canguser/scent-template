@@ -5,6 +5,8 @@ import { IfScope, IfScopeOptions } from '../scopes/IfScope';
 import { ScentObject } from '../utils/ScentObject';
 import { ScopeManager } from '../scopes/ScopeManager';
 import { ForScope, ForScopeOptions } from '../scopes/ForScope';
+import { BasicScope, BasicScopeOptions } from '../scopes/BasicScope';
+import { AttrScope, AttrScopeOptions } from '../scopes/AttrScope';
 
 export interface ContextOptions {
     configuration?: typeof configuration;
@@ -15,15 +17,19 @@ const defaultOptions: ContextOptions = {
 };
 
 type Scopes = {
+    [key: string]: BasicScope;
     bindText: TextScope;
     bindIf: IfScope;
     bindFor: ForScope;
+    bindAttr: AttrScope;
 };
 
 type ScopeOptions = {
+    [key: string]: BasicScopeOptions | any;
     bindText: TextScopeOptions;
     bindIf: IfScopeOptions;
     bindFor: ForScopeOptions;
+    bindAttr: AttrScopeOptions;
 };
 
 type ScopeBuilder<E> = { [key in keyof Scopes]: (ele: E, options?: ScopeOptions[key]) => string };
