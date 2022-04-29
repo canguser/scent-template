@@ -9,10 +9,6 @@ export interface ElementSetterScopeOptions extends BasicScopeOptions {
 
 export class ElementSetterScope extends BasicScope<Element, ElementSetterScopeOptions> {
     render(): void {
-        // const oldValue = this.target[this.options.property];
-        const newValue = execExpression(this.options.expression, this.target);
-        // if (oldValue !== newValue) {
-        this.target[this.options.property] = newValue;
-        // }
+        this.target[this.options.property] = execExpression(this.options.expression, this.getContextObject());
     }
 }

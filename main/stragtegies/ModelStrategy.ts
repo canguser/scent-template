@@ -15,6 +15,7 @@ export class ModelStrategy extends BasicStrategy {
         // generate render scopes from attribute nodes
         return attrInfos.reduce((scopes: string[], attr) => {
             const { value, name, more } = attr;
+            console.log(value, name, more);
             scopes.push(
                 context.scope.bindSetter(element, {
                     property: 'value',
@@ -23,7 +24,7 @@ export class ModelStrategy extends BasicStrategy {
             );
             scopes.push(
                 context.scope.bindAttr(element, {
-                    attr: name || value,
+                    attr: name || 'value',
                     expression: value
                 })
             );
