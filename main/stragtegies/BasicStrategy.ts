@@ -2,7 +2,7 @@ import { Context } from '../context/Context';
 import { StrategyType } from '../enum/StrategyType';
 import { ScentObject } from '../utils/ScentObject';
 
-export abstract class BasicStrategy<T = Element> extends ScentObject{
+export abstract class BasicStrategy<T = Element> extends ScentObject {
     type: StrategyType = StrategyType.Inherited;
-    abstract match<C extends Context>(element: T, context: C): boolean;
+    abstract match<C extends Context>(element: T, context: C, subScopes?: (target, context?: Context) => string[]): string[] | false;
 }

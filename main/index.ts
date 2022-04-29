@@ -5,6 +5,7 @@ import { IfScope } from './scopes/IfScope';
 import { TextScope } from './scopes/TextScope';
 import { ForScope } from './scopes/ForScope';
 import { TextStrategy } from './stragtegies/TextStrategy';
+import { ForStrategy } from './stragtegies/ForStrategy';
 
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
@@ -16,7 +17,7 @@ configuration.override({
         text: TextScope,
         for: ForScope
     },
-    strategies: [new TextStrategy()]
+    strategies: [new ForStrategy(), new TextStrategy()]
 });
 
 export * from './configure';

@@ -7,7 +7,7 @@ import { groupBy } from '@rapidly/utils/lib/array/groupBy';
 
 export interface BasicScopeOptions {
     configuration?: typeof configuration;
-    subScopes?: (<T, C>(target: T, context: C) => string[]) | string[];
+    subScopes?: (<T, C extends Context>(target: T, context: C) => string[]) | string[];
 }
 
 const defaultOptions: BasicScopeOptions = {
@@ -15,7 +15,7 @@ const defaultOptions: BasicScopeOptions = {
 };
 
 export abstract class BasicScope<
-    E = Element,
+    E extends Element = Element,
     Option extends BasicScopeOptions = BasicScopeOptions,
     C extends Context<object, E> = Context<object, E>
 > extends ScentObject {
@@ -88,8 +88,9 @@ export abstract class BasicScope<
             toRenderSubScopeInfos.push(info);
             newScopeInfos.push(info);
         }
+
         // get all keys not existed in new scope infos
-        const toRemoveKeys = subScopeInfos.map((i) => i.key).filter((key) => !allNewKeys.includes(key));
+        const toRemoveKeys = this.existedSubScopeInfos.map((i) => i.key).filter((key) => !allNewKeys.includes(key));
 
         toRemoveKeys.forEach((key) => {
             delete this.existedSubScopeInfos[key];
@@ -100,7 +101,7 @@ export abstract class BasicScope<
         });
         this.existedSubScopeInfos = newScopeInfos;
         this.subScopeInfos = [];
-        console.log(toRenderSubScopeInfos);
+        // console.log(toRenderSubScopeInfos);
         return toRenderSubScopeInfos;
     }
 
@@ -124,7 +125,7 @@ export abstract class BasicScope<
         return typeof subScopes === 'function' || (Array.isArray(subScopes) && subScopes.length > 0);
     }
 
-    private getSubToRenderScopes(): string[] {
+    private buildSubToRenderScopes(): string[] {
         const subScopes = this.options.subScopes;
         if (typeof subScopes === 'function') {
             const scopes = [];
@@ -137,7 +138,6 @@ export abstract class BasicScope<
                     this.subScopes[key] = newSubScopes;
                 }
             });
-
             return scopes;
         }
         return subScopes || [];
@@ -147,10 +147,7 @@ export abstract class BasicScope<
         if (this.aggregated && this.canRenderSubScopes) {
             const subScopes = this.options.subScopes;
             if (subScopes) {
-                const subScopeIds = this.getSubToRenderScopes();
-                subScopeIds.forEach((subScopeId) => {
-                    this.scopeManager.renderById(subScopeId);
-                });
+                const subScopeIds = this.buildSubToRenderScopes();
             }
         }
     }

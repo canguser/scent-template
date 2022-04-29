@@ -165,6 +165,19 @@ export function getAttributeNodes(ele: Element, prefixList) {
     return Array.from(attributes).filter((attr) => prefixList.some((prefix) => attr.name.startsWith(prefix)));
 }
 
+export function getNodeAttribute(node: Node, name: string){
+    if (node.nodeType === Node.ELEMENT_NODE) {
+        return (node as Element).getAttribute(name);
+    }
+    return null;
+}
+
+export function clearNodeAttribute(node: Node, name: string){
+    if (node.nodeType === Node.ELEMENT_NODE) {
+        (node as Element).removeAttribute(name);
+    }
+}
+
 export function getAttributeInfoMapping(ele: Element, prefixList = [], aliasMapping = {}) {
     const attributes = [...(ele.attributes || [])].map((attr) => {
         let parts = attr.name.split(':');

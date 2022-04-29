@@ -28,6 +28,8 @@ export class ForScope extends BasicScope<Element, ForScopeOptions> {
         return this.parentNode || (this.parentNode = this.target.parentNode);
     }
 
+    keyIndexMap: { [key: string]: number } = {};
+
     render(): void {
         const parentNode = this.getParentNode();
         if (this.target.parentNode) {
@@ -79,12 +81,15 @@ export class ForScope extends BasicScope<Element, ForScopeOptions> {
             }
         }
         this.existedKeys = keys;
+        this.keyIndexMap = {};
         this.putScopeInfos(
-            this.existedKeys.map((key, i) => ({
-                key,
-                target: this.keyTargetsMapping[key],
-                extra: i
-            }))
+            this.existedKeys.map((key, i) => {
+                this.keyIndexMap[key] = i;
+                return {
+                    key,
+                    target: this.keyTargetsMapping[key]
+                };
+            })
         );
     }
 
@@ -100,21 +105,26 @@ export class ForScope extends BasicScope<Element, ForScopeOptions> {
         return execExpression(this.options.of, this.getContextObject()) || [];
     }
 
-    protected getSubContext(key: string, index: any): Context {
+    getItemIndex(key: string): number {
+        return this.keyIndexMap[key];
+    }
+
+    protected getSubContext(key: string): Context {
         return new ProxyContext<object>({} as object, {
             proxyHandler: {
                 get: (target, p) => {
                     if (p === (this.options.index || '$index')) {
-                        return index;
+                        return this.getItemIndex(key);
                     }
                     if (p === (this.options.item || '$item')) {
-                        const items = this.items || [];
-                        return items[index];
+                        const index = this.getItemIndex(key);
+                        return this.items[index];
                     }
                     return this.getContextObject()[p];
                 },
                 set: (target, p, value) => {
                     if (p === (this.options.item || '$item')) {
+                        const index = this.getItemIndex(key);
                         const items = this.items || [];
                         items[index] = value;
                         return true;
