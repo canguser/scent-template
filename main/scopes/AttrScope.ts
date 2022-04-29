@@ -3,14 +3,17 @@ import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression'
 import { toDashName } from '../utils/NormalUtils';
 
 export interface AttrScopeOptions extends BasicScopeOptions {
-  attr: string;
-  expression: string;
-  subScopes?: never
+    attr: string;
+    expression: string;
+    subScopes?: never;
 }
 
-export class AttrScope extends BasicScope<Element, AttrScopeOptions>{
-
+export class AttrScope extends BasicScope<Element, AttrScopeOptions> {
     originValue: string;
+
+    init() {
+        this.originValue = this.target.getAttribute(this.options.attr);
+    }
 
     render(): void {
         const { attr, expression } = this.options;
@@ -44,5 +47,4 @@ export class AttrScope extends BasicScope<Element, AttrScopeOptions>{
             this.target.setAttribute(attr, value);
         }
     }
-
 }

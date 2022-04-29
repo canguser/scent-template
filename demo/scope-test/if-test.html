@@ -6,32 +6,18 @@
     </head>
     <body>
         <div class="q">
-            <span></span>
-            <h1></h1>
         </div>
         <script type="module">
             import { ref, reactive } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
             import { defineComponent } from '../../dist/scent.template.esm.js';
             import '../VueReactiveAdaptor.js';
-            const Test = defineComponent({
-                template: `<div :class="{'a':$props.title}" class="fasd">
-                                Test: {$props.title}
-                            </div>`,
-                setup(props) {
-                    const t = (window.t = ref('test'));
-                    return {
-                        title: t
-                    };
-                }
-            });
             const App = defineComponent({
-                components: { Test },
                 template: `
-                <div class="q"><span><test ref="test" :title="title"></test></span><h1 s-for:item="list" s-key="name" @click="handleClick">{item.name}</h1></div>
+                <div class="q" s-if="age>10">{title}</div>
                 `,
-                setup(props, instance) {
+                setup() {
                     const title = (window.title = ref('Hello World'));
-                    const list = (window.l = reactive([
+                    const list = window.l = reactive([
                         { name: 'John', age: 20, id: 'o1' },
                         { name: 'Mary', age: 30, id: 'o2' },
                         { name: 'Peter', age: 40, id: 'o3' },
@@ -40,13 +26,11 @@
                         { name: 'Jane', age: 70, id: 'o6' },
                         { name: 'Jack', age: 80, id: 'o7' },
                         { name: 'Mike', age: 90, id: 'o8' }
-                    ]));
+                    ])
+                    const age = window.age = ref(20);
                     return {
                         title,
-                        list,
-                        handleClick(){
-                            console.log(instance.getSubContextByRef('test'))
-                        }
+                        list, age
                     };
                 }
             });

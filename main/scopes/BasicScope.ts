@@ -38,7 +38,10 @@ export abstract class BasicScope<
         const idGenerator = configuration.get<Function>('idGenerator');
         this.id = idGenerator();
         this.scopeManager.registerScope(this);
+        this.init();
     }
+
+    init() {}
 
     protected get configuration() {
         return this.options.configuration;

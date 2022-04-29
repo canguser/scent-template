@@ -5,6 +5,8 @@ export class ProxyAdaptor {
 
     scopeManager: ScopeManager;
 
+    doingsInTick: Array<() => void> = [];
+
     initialize() {}
 
     public create<T extends object = object>(context: T, readonly?: boolean): T {
@@ -29,6 +31,7 @@ export class ProxyAdaptor {
                     });
                 }
                 console.timeEnd('rendered');
+                this.execTickDoings();
             }
         }
     }
@@ -38,6 +41,22 @@ export class ProxyAdaptor {
             requestAnimationFrame(() => {
                 resolve(undefined);
             });
+        });
+    }
+
+    execTickDoings() {
+        this.doingsInTick.forEach((doing) => {
+            doing();
+        });
+        this.doingsInTick = [];
+    }
+
+    public nextTick(doing: () => void): Promise<void> {
+        if (doing && typeof doing === 'function') {
+            this.doingsInTick.push(doing);
+        }
+        return new Promise((resolve) => {
+            this.doingsInTick.push(resolve);
         });
     }
 }

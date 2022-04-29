@@ -19,6 +19,11 @@ class ComponentInstance {
     setSubContextByRef(ref: string, context: any) {
         this.refContextMap.set(ref, context);
     }
+
+    async nextTick(fn: () => void) {
+        const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
+        return adaptor?.nextTick?.(fn) || fn();
+    }
 }
 
 export interface ComponentFnOptions {
@@ -152,7 +157,7 @@ export function defineComponent(options: ComponentOptions): ComponentFn {
         const component = document.createElement(alias || options.name || 'App');
         const instance = new ComponentInstance(component);
         const context = new AdaptedContext({
-            ...options.setup?.(readonlyProps, instance),
+            ...options.setup?.call?.(instance, readonlyProps, instance),
             $props: readonlyProps
         });
         const result = template.content;

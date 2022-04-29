@@ -11,6 +11,8 @@ import { AttrScope } from './scopes/AttrScope';
 import { IfStrategy } from './stragtegies/IfStrategy';
 import { EventScope } from './scopes/EventScope';
 import { EventStrategy } from './stragtegies/EventStrategy';
+import { ElementSetterScope } from './scopes/ElementSetterScope';
+import { ModelStrategy } from './stragtegies/ModelStrategy';
 
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
@@ -22,9 +24,17 @@ configuration.override({
         text: TextScope,
         for: ForScope,
         attr: AttrScope,
-        event: EventScope
+        event: EventScope,
+        setter: ElementSetterScope
     },
-    strategies: [new IfStrategy(), new ForStrategy(), new AttrStrategy(), new EventStrategy(), new TextStrategy()]
+    strategies: [
+        new ForStrategy(),
+        new IfStrategy(),
+        new AttrStrategy(),
+        new EventStrategy(),
+        new ModelStrategy(),
+        new TextStrategy()
+    ]
 });
 
 export * from './configure';

@@ -7,10 +7,10 @@ export interface TextScopeOptions extends BasicScopeOptions {
 
 export class TextScope extends BasicScope<Element, TextScopeOptions> {
     render(): void {
-        const originalText = this.target.textContent;
-        const text = template(this.options.expression, this.getContextObject(), { withFunction: true });
-        if (originalText !== text) {
-            this.target.textContent = text;
+        const oldContent = this.target.textContent;
+        const newContent = template(this.options.expression, this.getContextObject(), { withFunction: true });
+        if (oldContent !== newContent) {
+            this.target.textContent = newContent;
         }
     }
 }

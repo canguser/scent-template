@@ -7,6 +7,8 @@ import { ScopeManager } from '../scopes/ScopeManager';
 import { ForScope, ForScopeOptions } from '../scopes/ForScope';
 import { BasicScope, BasicScopeOptions } from '../scopes/BasicScope';
 import { AttrScope, AttrScopeOptions } from '../scopes/AttrScope';
+import { EventScope, EventScopeOptions } from '../scopes/EventScope';
+import { ElementSetterScope, ElementSetterScopeOptions } from '../scopes/ElementSetterScope';
 
 export interface ContextOptions {
     configuration?: typeof configuration;
@@ -22,6 +24,8 @@ type Scopes = {
     bindIf: IfScope;
     bindFor: ForScope;
     bindAttr: AttrScope;
+    bindEvent: EventScope;
+    bindSetter: ElementSetterScope;
 };
 
 type ScopeOptions = {
@@ -30,6 +34,8 @@ type ScopeOptions = {
     bindIf: IfScopeOptions;
     bindFor: ForScopeOptions;
     bindAttr: AttrScopeOptions;
+    bindEvent: EventScopeOptions;
+    bindSetter: ElementSetterScopeOptions;
 };
 
 type ScopeBuilder<E> = { [key in keyof Scopes]: (ele: E, options?: ScopeOptions[key]) => string };
