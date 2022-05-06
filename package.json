@@ -1,6 +1,6 @@
 {
   "name": "@scent/template",
-  "version": "2.0.0-beta5",
+  "version": "3.0.0-beta1",
   "description": "",
   "main": "dist/scent.template.js",
   "mainMini": "dist/scent.template.mini.js",
@@ -36,7 +36,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@rapidly/utils": "2.0.0-beta11"
+    "@rapidly/utils": "2.0.0-beta16"
   },
   "types": "types/index.d.ts",
   "devDependencies": {

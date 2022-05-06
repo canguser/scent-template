@@ -150,8 +150,16 @@ export abstract class BasicScope<
         if (this.aggregated && this.canRenderSubScopes) {
             const subScopes = this.options.subScopes;
             if (subScopes) {
-                const subScopeIds = this.buildSubToRenderScopes();
+                this.buildSubToRenderScopes();
             }
         }
+    }
+
+    public getAllSubScopeIds(): string[] {
+        const ids = [];
+        for (const key in this.subScopes) {
+            ids.push(...this.subScopes[key]);
+        }
+        return ids;
     }
 }

@@ -44,3 +44,4 @@ export * from './scopes/IfScope';
 export * from './context/AdaptedContext';
 export * from './context/ProxyAdaptor';
 export * from './component';
+export * from './router';

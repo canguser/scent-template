@@ -49,7 +49,14 @@ export class ScopeManager extends ScentObject {
     }
 
     public unregisterScope(scopeId: string) {
-        delete this.scopesMapper[scopeId];
+        const scope = this.scopesMapper[scopeId];
+        if (scope) {
+            const allSubIds = scope.getAllSubScopeIds();
+            allSubIds.forEach((subId) => {
+                this.unregisterScope(subId);
+            });
+            delete this.scopesMapper[scopeId];
+        }
     }
 
     public renderById(id: string | string[]) {
