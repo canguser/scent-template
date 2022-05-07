@@ -1,6 +1,6 @@
 import { getProperty } from '@rapidly/utils/lib/object/getProperty';
-import { merge } from '../utils/NormalUtils';
-import { ScentObject } from '../utils/ScentObject';
+import { merge } from '../../utils/NormalUtils';
+import { ScentObject } from '../../utils/ScentObject';
 
 export class Configuration extends ScentObject{
     configs: {

@@ -1,23 +1,25 @@
-import { configuration } from './configure';
+import { configuration } from './core/configure';
 import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
-import { ScopeManager } from './scopes/ScopeManager';
-import { IfScope } from './scopes/IfScope';
-import { TextScope } from './scopes/TextScope';
-import { ForScope } from './scopes/ForScope';
-import { TextStrategy } from './stragtegies/TextStrategy';
-import { ForStrategy } from './stragtegies/ForStrategy';
-import { AttrStrategy } from './stragtegies/AttrStrategy';
-import { AttrScope } from './scopes/AttrScope';
-import { IfStrategy } from './stragtegies/IfStrategy';
-import { EventScope } from './scopes/EventScope';
-import { EventStrategy } from './stragtegies/EventStrategy';
-import { ElementSetterScope } from './scopes/ElementSetterScope';
-import { ModelStrategy } from './stragtegies/ModelStrategy';
-
+import { ScopeManager } from './core/scopes/managers/ScopeManager';
+import { IfScope } from './core/scopes/IfScope';
+import { TextScope } from './core/scopes/TextScope';
+import { ForScope } from './core/scopes/ForScope';
+import { TextStrategy } from './template/stragtegies/TextStrategy';
+import { ForStrategy } from './template/stragtegies/ForStrategy';
+import { AttrStrategy } from './template/stragtegies/AttrStrategy';
+import { AttrScope } from './core/scopes/AttrScope';
+import { IfStrategy } from './template/stragtegies/IfStrategy';
+import { EventScope } from './core/scopes/EventScope';
+import { EventStrategy } from './template/stragtegies/EventStrategy';
+import { ElementSetterScope } from './core/scopes/ElementSetterScope';
+import { ModelStrategy } from './template/stragtegies/ModelStrategy';
+import { GlobalContext } from './core/context/GlobalContext';
+import { merge } from '@rapidly/utils/lib/commom/object/merge';
 configuration.override({
     idGenerator: () => '_' + genOrderedId(),
     instances: {
-        scopeManager: new ScopeManager()
+        scopeManager: new ScopeManager(),
+        globalContext: new GlobalContext()
     },
     scopes: {
         if: IfScope,
@@ -37,11 +39,13 @@ configuration.override({
     ]
 });
 
-export * from './configure';
-export * from './scopes/TextScope';
-export * from './scopes/ScopeManager';
-export * from './scopes/IfScope';
-export * from './context/AdaptedContext';
-export * from './context/ProxyAdaptor';
-export * from './component';
+export const globalVars = GlobalContext.prototype as any;
+
+export * from './core/configure';
+export * from './core/scopes/TextScope';
+export * from './core/scopes/managers/ScopeManager';
+export * from './core/scopes/IfScope';
+export * from './core/context/AdaptedContext';
+export * from './core/adaptor/ProxyAdaptor';
+export * from './template/component';
 export * from './router';

@@ -1,7 +1,7 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../context/Context';
+import { Context } from '../../core/context/Context';
 import { StrategyType } from '../enum/StrategyType';
-import { getAttributeInfoMapping } from '../utils/DomHelper';
+import { getAttributeInfoMapping } from '../../utils/DomHelper';
 
 export class ModelStrategy extends BasicStrategy {
     prefixList: string[] = ['s-model'];

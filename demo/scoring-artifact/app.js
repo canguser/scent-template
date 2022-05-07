@@ -1,1 +1,1 @@
-import { Reactivity, Pinyin, Scent } from './lib.js';
+import { Reactivity, Scent } from './lib.js';

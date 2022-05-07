@@ -1,7 +1,7 @@
 import { BasicStrategy } from './BasicStrategy';
 import { StrategyType } from '../enum/StrategyType';
-import { getAttributeNodes } from '../utils/DomHelper';
-import { Context } from '../context/Context';
+import { getAttributeNodes } from '../../utils/DomHelper';
+import { Context } from '../../core/context/Context';
 
 export class ForStrategy extends BasicStrategy {
     type = StrategyType.Alienated_UNIQUE;

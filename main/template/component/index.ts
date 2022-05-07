@@ -1,11 +1,11 @@
-import { AdaptedContext } from '../context/AdaptedContext';
-import { configuration } from '../configure';
-import { ScopeManager } from '../scopes/ScopeManager';
-import { toDashName, traversingTreeNode } from '../utils/NormalUtils';
+import { AdaptedContext } from '../../core/context/AdaptedContext';
+import { configuration } from '../../core/configure';
+import { ScopeManager } from '../../core/scopes/managers/ScopeManager';
+import { toDashName, traversingTreeNode } from '../../utils/NormalUtils';
 import { BasicStrategy } from '../stragtegies/BasicStrategy';
 import { StrategyType } from '../enum/StrategyType';
-import { Context } from '../context/Context';
-import { clearNodeAttribute, getAttrObject, getNodeAttribute } from '../utils/DomHelper';
+import { Context } from '../../core/context/Context';
+import { clearNodeAttribute, getAttrObject, getNodeAttribute } from '../../utils/DomHelper';
 
 class ComponentInstance {
     private refContextMap: Map<string, any> = new Map();

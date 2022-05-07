@@ -1,6 +1,6 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../context/Context';
-import { getAttributeInfoMapping } from '../utils/DomHelper';
+import { Context } from '../../core/context/Context';
+import { getAttributeInfoMapping } from '../../utils/DomHelper';
 
 export class EventStrategy extends BasicStrategy {
     prefixList: string[] = ['s-on', '@'];

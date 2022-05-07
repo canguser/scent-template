@@ -1,7 +1,7 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../context/Context';
-import { getAttributeInfoMapping } from '../utils/DomHelper';
-import { toCamelName } from '../utils/NormalUtils';
+import { Context } from '../../core/context/Context';
+import { getAttributeInfoMapping } from '../../utils/DomHelper';
+import { toCamelName } from '../../utils/NormalUtils';
 
 export class AttrStrategy extends BasicStrategy {
     prefixAlisa: string[] = ['s-bind', ':'];

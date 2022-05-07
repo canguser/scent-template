@@ -1,5 +1,5 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../context/Context';
+import { Context } from '../../core/context/Context';
 import { StrategyType } from '../enum/StrategyType';
 
 export class IfStrategy extends BasicStrategy {

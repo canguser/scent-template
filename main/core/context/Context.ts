@@ -1,14 +1,15 @@
-import { merge } from '../utils/NormalUtils';
+import { merge, wrapPrototype } from '../../utils/NormalUtils';
 import { configuration } from '../configure';
 import { TextScope, TextScopeOptions } from '../scopes/TextScope';
 import { IfScope, IfScopeOptions } from '../scopes/IfScope';
-import { ScentObject } from '../utils/ScentObject';
-import { ScopeManager } from '../scopes/ScopeManager';
+import { ScentObject } from '../../utils/ScentObject';
+import { ScopeManager } from '../scopes/managers/ScopeManager';
 import { ForScope, ForScopeOptions } from '../scopes/ForScope';
 import { BasicScope, BasicScopeOptions } from '../scopes/BasicScope';
 import { AttrScope, AttrScopeOptions } from '../scopes/AttrScope';
 import { EventScope, EventScopeOptions } from '../scopes/EventScope';
 import { ElementSetterScope, ElementSetterScopeOptions } from '../scopes/ElementSetterScope';
+import { GlobalContext } from './GlobalContext';
 
 export interface ContextOptions {
     configuration?: typeof configuration;
@@ -85,7 +86,7 @@ export abstract class Context<
     }
 
     public get contextGetter(): () => T {
-        return () => this.context || ({} as T);
+        return () => wrapPrototype(this.context || ({} as T), GlobalContext);
     }
 
     protected abstract buildContext(context: T): T;

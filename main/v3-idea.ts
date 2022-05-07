@@ -20,3 +20,10 @@ const forScopeId = context.scope.bindFor(ele, {
         return [scopeId];
     }
 });
+
+declare class Scent {
+    configuration: any;
+}
+
+const scent = new Scent();
+

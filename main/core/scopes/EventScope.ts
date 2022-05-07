@@ -1,6 +1,6 @@
 import { BasicScope, BasicScopeOptions } from './BasicScope';
 import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
-import { toDashName } from '../utils/NormalUtils';
+import { toDashName } from '../../utils/NormalUtils';
 import { register, unregister } from '@rapidly/utils/lib/commom/dom/DomEvent';
 
 export interface EventScopeOptions extends BasicScopeOptions {

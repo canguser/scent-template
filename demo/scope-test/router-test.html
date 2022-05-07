@@ -11,8 +11,12 @@
         </div>
         <script type="module">
             import { ref, reactive } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
-            import { defineComponent, defineRouter } from '../../dist/scent.template.esm.js';
+            import { defineComponent, createRouter, globalVars } from '../../dist/scent.template.esm.js';
             import '../VueReactiveAdaptor.js';
+            window._name = ref('test');
+            globalVars.test = reactive({
+                name: window._name
+            });
             const Test = defineComponent({
                 template: `<div :class="{'a':$props.title}" class="fasd">
                                 Test: {$props.title}
@@ -26,7 +30,7 @@
             });
             const Home = defineComponent({
                 template: `<div>
-                                Home: {$props.id}
+                                Home: {$props.id}, {test.name}
                             </div>`
             });
             const App = defineComponent({
@@ -56,14 +60,14 @@
                 }
             });
             const ele = document.querySelector('.q');
-            const router = defineRouter({
+            const router = createRouter({
                 rules: [
                     { path: '/', component: App },
                     { path: '/home', component: Home },
                     { path: '/home/{id}/display', component: Home, props: true }
                 ]
             });
-            ele.appendChild(router());
+            ele.appendChild(router);
         </script>
     </body>
 </html>

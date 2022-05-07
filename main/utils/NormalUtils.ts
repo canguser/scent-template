@@ -310,3 +310,39 @@ export function mapObject<T extends object>(obj: T, fn: (value, key) => object):
     }
     return newObj;
 }
+
+type Constructor<T> = new (...args: any[]) => T;
+
+export function wrapPrototype<T extends object, C>(obj: T, type: Constructor<C>): T & C {
+    const proto = Object.getPrototypeOf(obj);
+    const wrappedProto = type.prototype;
+    Object.setPrototypeOf(
+        obj,
+        new Proxy(
+            {
+                get origin() {
+                    return proto;
+                },
+                get wrapped() {
+                    return wrappedProto;
+                }
+            },
+            {
+                get(target, prop, receiver) {
+                    const originValue = Reflect.get(target.origin, prop);
+                    if (originValue !== undefined) {
+                        return originValue;
+                    }
+                    return Reflect.get(target.wrapped, prop);
+                },
+                set() {
+                    return false;
+                },
+                has(target, prop) {
+                    return Reflect.has(target.origin, prop) || Reflect.has(target.wrapped, prop);
+                }
+            }
+        )
+    );
+    return obj as T & C;
+}

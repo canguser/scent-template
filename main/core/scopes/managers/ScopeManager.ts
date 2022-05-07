@@ -1,7 +1,7 @@
-import { BasicScope } from './BasicScope';
-import { ScentObject } from '../utils/ScentObject';
+import { BasicScope } from '../BasicScope';
+import { ScentObject } from '../../../utils/ScentObject';
 import { genOrderedId } from '@rapidly/utils/lib/commom/genOrderedId';
-import { ProxyAdaptor } from '../context/ProxyAdaptor';
+import { ProxyAdaptor } from '../../adaptor/ProxyAdaptor';
 
 export class ScopeManager extends ScentObject {
     scopesMapper: { [key: string]: BasicScope } = {};

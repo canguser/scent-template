@@ -1,6 +1,6 @@
 import { BasicScope, BasicScopeOptions } from './BasicScope';
 import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
-import { toDashName } from '../utils/NormalUtils';
+import { toDashName } from '../../utils/NormalUtils';
 
 export interface AttrScopeOptions extends BasicScopeOptions {
     attr: string;

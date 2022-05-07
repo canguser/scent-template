@@ -1,6 +1,6 @@
 import { Context } from './Context';
-import { ScopeManager } from '../scopes/ScopeManager';
-import { ProxyAdaptor } from './ProxyAdaptor';
+import { ScopeManager } from '../scopes/managers/ScopeManager';
+import { ProxyAdaptor } from '../adaptor/ProxyAdaptor';
 
 export class AdaptedContext extends Context {
     protected buildContext(context: object): object {

@@ -2,7 +2,7 @@ import { BasicScope, BasicScopeOptions } from './BasicScope';
 import { execExpression } from '@rapidly/utils/lib/commom/string/execExpression';
 import { Context } from '../context/Context';
 import { ProxyContext } from '../context/ProxyContext';
-import { diffFrom } from '../utils/NormalUtils';
+import { diffFrom } from '../../utils/NormalUtils';
 
 export interface ForScopeOptions extends BasicScopeOptions {
     index?: string;

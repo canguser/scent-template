@@ -1,8 +1,8 @@
 import { configuration } from '../configure';
-import { merge } from '../utils/NormalUtils';
+import { merge } from '../../utils/NormalUtils';
 import { Context } from '../context/Context';
-import { ScopeManager } from './ScopeManager';
-import { ScentObject } from '../utils/ScentObject';
+import { ScopeManager } from './managers/ScopeManager';
+import { ScentObject } from '../../utils/ScentObject';
 import { groupBy } from '@rapidly/utils/lib/array/groupBy';
 
 export interface BasicScopeOptions {
