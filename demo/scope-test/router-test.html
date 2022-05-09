@@ -10,13 +10,22 @@
             <h1></h1>
         </div>
         <script type="module">
-            import { ref, reactive } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
-            import { defineComponent, createRouter, globalVars } from '../../dist/scent.template.esm.js';
+            import {
+                ref,
+                reactive,
+                computed
+            } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+            import {
+                defineComponent,
+                createRouter,
+                globalVars,
+                useRoute,
+                pushRoute
+            } from '../../dist/scent.template.esm.js';
             import '../VueReactiveAdaptor.js';
-            window._name = ref('test');
-            globalVars.test = reactive({
-                name: window._name
-            });
+            globalVars.$push = function (...args) {
+                return pushRoute(...args);
+            };
             const Test = defineComponent({
                 template: `<div :class="{'a':$props.title}" class="fasd">
                                 Test: {$props.title}
@@ -30,16 +39,22 @@
             });
             const Home = defineComponent({
                 template: `<div>
-                                Home: {$props.id}, {test.name}
+                                Home: {$props.id}
                             </div>`
             });
             const App = defineComponent({
                 components: { Test },
                 template: `
-                <div class="q"><span><test ref="test" :title="title"></test></span><h1 s-for:item="list" s-key="name" @click="handleClick">{item.name}</h1></div>
+                <div class="q">
+                {title}
+                <span><test ref="test" :title="title"></test></span>
+                <h1 s-for:item="list" s-key="name" @click="handleClick">{item.name}</h1>
+                <button @click="$push('./home/test/display')">go</button>
+                </div>
                 `,
                 setup(props, instance) {
-                    const title = (window.title = ref('Hello World'));
+                    const route = useRoute();
+                    const title = computed(() => route.query.title || 'No Title');
                     const list = (window.l = reactive([
                         { name: 'John', age: 20, id: 'o1' },
                         { name: 'Mary', age: 30, id: 'o2' },

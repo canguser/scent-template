@@ -6,6 +6,7 @@ import { urlJoin } from '@rapidly/utils/lib/commom/url/urlJoin';
 import { matchTemplate } from '@rapidly/utils/lib/commom/string/matchTemplate';
 import { template } from '@rapidly/utils/lib/commom/string/template';
 import { register } from '@rapidly/utils/lib/commom/dom/DomEvent';
+import { merge } from '@rapidly/utils/lib/commom/object/merge';
 
 export interface RouterRule {
     name?: string;
@@ -26,16 +27,27 @@ export interface Route {
     query?: { [key: string]: string };
     params?: { [key: string]: string };
     props?: object;
+}
+
+export interface ElementRoute extends Route {
     rule?: RouterRule;
     element?: Element;
+    querystring?: string;
 }
 
 export class Router {
-    histories: Route[] = [];
+    histories: ElementRoute[] = [];
     target: Element;
+    route: Route;
+    hasApplied: boolean = false;
 
     constructor(protected readonly options: BasicRouterOptions) {
         this.target = document.createElement('router');
+    }
+
+    public apply() {
+        if (this.hasApplied) return;
+        this.assignRoute();
         let preventHashChangeHandling = false;
         register(window, 'hashchange', () => {
             if (!preventHashChangeHandling) {
@@ -64,15 +76,43 @@ export class Router {
         return scopeManager.proxyAdaptor;
     }
 
-    public push(name: string, params?: { [key: string]: string }, query?: { [key: string]: string });
+    public push(name: string, params?: { [key: string]: any }, query?: { [key: string]: any });
 
-    public push(path: string): void {
+    public push(path: string);
+
+    public push(pathOrName: string, params?: { [key: string]: any }, query?: { [key: string]: any }): void {
+        let path: string = pathOrName;
+        const rule = this.options.rules.find((rule) => rule.name === pathOrName);
+        if (rule) {
+            path =
+                template(rule.path, params) +
+                (query
+                    ? `?${Object.keys(query)
+                          .map((key) => `${key}=${query[key]}`)
+                          .join('&')}`
+                    : '');
+        }
         if (this.mode === 'hash') {
-
+            const { latestRoute } = this;
+            const currentPath = latestRoute.path;
+            window.location.hash = urlJoin(currentPath, path);
         }
     }
 
     public back(): void {}
+
+    private assignRoute(route?: Route) {
+        if (!this.route) {
+            this.route = this.adaptor.create({
+                query: this.adaptor.create({}),
+                params: this.adaptor.create({}),
+                props: this.adaptor.create({})
+            });
+        }
+        if (route) {
+            merge(this.route, route);
+        }
+    }
 
     protected applyRoute(): void {
         if (this.mode === 'hash') {
@@ -80,31 +120,36 @@ export class Router {
             const path = location.hash.slice(1) || '';
             const currentRoute = this.genRoute(path);
             if (path !== currentRoute.path) {
-                location.hash = currentRoute.path;
+                location.hash =
+                    currentRoute.path + (currentRoute.querystring?.length ? '?' + currentRoute.querystring : '');
             }
-            let toChangeRoute = latestRoute;
-            if (currentRoute.path !== latestRoute.path) {
-                toChangeRoute = currentRoute;
+            // check if route is changed by its rule
+            const isChanged = latestRoute.rule !== currentRoute.rule;
+            let refreshedRoute = latestRoute;
+
+            if (isChanged) {
+                refreshedRoute = currentRoute;
                 const { rule, props } = currentRoute;
-                if (latestRoute.rule !== rule) {
-                    const componentFn = rule.component;
-                    if (typeof componentFn === 'function') {
-                        const newEle = (currentRoute.element = componentFn(props, {}));
-                        const lastEle = latestRoute.element;
-                        if (lastEle) {
-                            this.target.replaceChild(newEle, lastEle);
-                            // todo - destroy lastEle
-                        } else {
-                            this.target.appendChild(newEle);
-                        }
+                const componentFn = rule.component;
+                if (typeof componentFn === 'function') {
+                    const newEle = (currentRoute.element = componentFn(props, {}));
+                    const lastEle = latestRoute.element;
+                    if (lastEle) {
+                        this.target.replaceChild(newEle, lastEle);
+                        // todo - destroy lastEle
+                    } else {
+                        this.target.appendChild(newEle);
                     }
-                } else {
-                    currentRoute.props = latestRoute.props;
-                    currentRoute.element = latestRoute.element;
                 }
                 this.histories.push(currentRoute);
+            } else {
+                // update latest route
+                latestRoute.path = currentRoute.path;
+                latestRoute.querystring = currentRoute.querystring;
+                latestRoute.query = currentRoute.query;
+                latestRoute.params = currentRoute.params;
             }
-            const { rule, props, params, query } = toChangeRoute;
+            const { rule, query, params } = refreshedRoute;
             if (rule.props) {
                 const newProps =
                     typeof rule.props === 'function'
@@ -113,28 +158,29 @@ export class Router {
                         ? { ...query, ...params }
                         : rule.props;
                 Object.keys(newProps).forEach((key) => {
-                    props[key] = newProps[key];
+                    refreshedRoute.props[key] = newProps[key];
                 });
             }
+            this.assignRoute(refreshedRoute);
         }
     }
 
-    protected genRoute(path: string): Route {
+    protected genRoute(path: string): ElementRoute {
         let [p = '', query = ''] = path.split('?');
         const queryParams = parseQueryString(query);
         p = urlJoin(p);
         const { rules } = this;
         let isMatch = false,
-            matchedRoute: Route = {
+            matchedRoute: ElementRoute = {
                 path: p,
-                query: queryParams
+                query: queryParams,
+                querystring: query
             };
         for (const rule of rules) {
             const rulePath = urlJoin(rule.path);
             p = urlJoin(p);
             const matchResult = matchTemplate<{ [key: string]: string }>(p, rulePath);
             if (matchResult) {
-                location.hash = p + (query ? '?' + query : '');
                 isMatch = true;
                 matchedRoute.params = matchResult;
                 matchedRoute.rule = rule;
