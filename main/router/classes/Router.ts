@@ -3,10 +3,10 @@ import { configuration } from '../../core/configure';
 import { ScopeManager } from '../../core/scopes/managers/ScopeManager';
 import { parseQueryString } from '@rapidly/utils/lib/commom/url/parseQueryString';
 import { urlJoin } from '@rapidly/utils/lib/commom/url/urlJoin';
-import { matchTemplate } from '@rapidly/utils/lib/commom/string/matchTemplate';
 import { template } from '@rapidly/utils/lib/commom/string/template';
 import { register } from '@rapidly/utils/lib/commom/dom/DomEvent';
 import { merge } from '@rapidly/utils/lib/commom/object/merge';
+import { matchUrlTemplate } from '@rapidly/utils/lib/commom/url/matchUrlTemplate';
 
 export interface RouterRule {
     name?: string;
@@ -179,7 +179,7 @@ export class Router {
         for (const rule of rules) {
             const rulePath = urlJoin(rule.path);
             p = urlJoin(p);
-            const matchResult = matchTemplate<{ [key: string]: string }>(p, rulePath);
+            const matchResult = matchUrlTemplate<{ [key: string]: string }>(p, rulePath);
             if (matchResult) {
                 isMatch = true;
                 matchedRoute.params = matchResult;
