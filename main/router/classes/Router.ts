@@ -7,6 +7,9 @@ import { template } from '@rapidly/utils/lib/commom/string/template';
 import { register } from '@rapidly/utils/lib/commom/dom/DomEvent';
 import { merge } from '@rapidly/utils/lib/commom/object/merge';
 import { matchUrlTemplate } from '@rapidly/utils/lib/commom/url/matchUrlTemplate';
+import { formatUrl } from '@rapidly/utils/lib/commom/url/formatUrl';
+import { pathJoin } from '@rapidly/utils/lib/commom/path/pathJoin';
+import { findNode } from '../../utils/DomHelper';
 
 export interface RouterRule {
     name?: string;
@@ -15,6 +18,7 @@ export interface RouterRule {
     props?: object | boolean | ((params?: { [key: string]: string }, query?: { [key: string]: string }) => object);
     default?: boolean;
     keepAlive?: boolean;
+    subRules?: RouterRule[];
 }
 
 export interface BasicRouterOptions {
@@ -24,6 +28,7 @@ export interface BasicRouterOptions {
 
 export interface Route {
     path?: string;
+    matchPath?: string;
     query?: { [key: string]: string };
     params?: { [key: string]: string };
     props?: object;
@@ -33,6 +38,7 @@ export interface ElementRoute extends Route {
     rule?: RouterRule;
     element?: Element;
     querystring?: string;
+    subRoute?: ElementRoute;
 }
 
 export class Router {
@@ -56,7 +62,9 @@ export class Router {
                 preventHashChangeHandling = false;
             }
         });
+        preventHashChangeHandling = true;
         this.applyRoute();
+        preventHashChangeHandling = false;
     }
 
     get mode() {
@@ -114,6 +122,21 @@ export class Router {
         }
     }
 
+    private syncRouteProps(route: ElementRoute) {
+        const { rule, query, params } = route;
+        if (rule.props) {
+            const newProps =
+                typeof rule.props === 'function'
+                    ? rule.props(params, query)
+                    : rule.props === true
+                    ? { ...query, ...params }
+                    : rule.props;
+            Object.keys(newProps).forEach((key) => {
+                route.props[key] = newProps[key];
+            });
+        }
+    }
+
     protected applyRoute(): void {
         if (this.mode === 'hash') {
             const latestRoute = this.latestRoute || {};
@@ -123,66 +146,89 @@ export class Router {
                 location.hash =
                     currentRoute.path + (currentRoute.querystring?.length ? '?' + currentRoute.querystring : '');
             }
-            // check if route is changed by its rule
-            const isChanged = latestRoute.rule !== currentRoute.rule;
-            let refreshedRoute = latestRoute;
 
-            if (isChanged) {
-                refreshedRoute = currentRoute;
-                const { rule, props } = currentRoute;
-                const componentFn = rule.component;
-                if (typeof componentFn === 'function') {
-                    const newEle = (currentRoute.element = componentFn(props, {}));
-                    const lastEle = latestRoute.element;
-                    if (lastEle) {
-                        this.target.replaceChild(newEle, lastEle);
-                        // todo - destroy lastEle
-                    } else {
-                        this.target.appendChild(newEle);
+            let routeChanged = false;
+            // check the same level route if is changed
+            for (
+                let current = currentRoute, latest = latestRoute, parentRoute;
+                current;
+                parentRoute = current, current = current.subRoute, latest = latest?.subRoute
+            ) {
+                // check if route is changed by its rule
+                const isChanged = routeChanged || latest?.rule !== current.rule;
+
+                if (isChanged) {
+                    routeChanged = true;
+                    const { rule } = current;
+                    const componentFn = rule.component;
+                    if (typeof componentFn === 'function') {
+                        const props = (current.props = this.adaptor.create({}));
+                        const newEle = (current.element = componentFn(props, {}));
+                        const lastEle = latest?.element;
+                        if (lastEle && lastEle.parentNode) {
+                            lastEle.parentNode.replaceChild(newEle, lastEle);
+                            // todo - destroy lastEle
+                        } else if (parentRoute && parentRoute.element) {
+                            const placeholderText = '- router -';
+                            const placeholder = findNode(parentRoute.element, (node) => {
+                                return node.nodeType === 3 && node.textContent === placeholderText;
+                            });
+                            if (placeholder && placeholder.parentNode) {
+                                placeholder.parentNode.replaceChild(newEle, placeholder);
+                            }else {
+                                // todo - disable current route
+                            }
+                        } else {
+                            this.target.appendChild(newEle);
+                        }
                     }
+                    this.syncRouteProps(current);
                 }
+            }
+            let refreshedRoute = latestRoute;
+            if (routeChanged) {
+                refreshedRoute = currentRoute;
                 this.histories.push(currentRoute);
             } else {
-                // update latest route
-                latestRoute.path = currentRoute.path;
-                latestRoute.querystring = currentRoute.querystring;
-                latestRoute.query = currentRoute.query;
-                latestRoute.params = currentRoute.params;
-            }
-            const { rule, query, params } = refreshedRoute;
-            if (rule.props) {
-                const newProps =
-                    typeof rule.props === 'function'
-                        ? rule.props(params, query)
-                        : rule.props === true
-                        ? { ...query, ...params }
-                        : rule.props;
-                Object.keys(newProps).forEach((key) => {
-                    refreshedRoute.props[key] = newProps[key];
-                });
+                for (
+                    let current = currentRoute, latest = latestRoute;
+                    current;
+                    current = current.subRoute, latest = latest.subRoute
+                ) {
+                    // sync latest route from current
+                    latest.path = current.path;
+                    latest.querystring = current.querystring;
+                    latest.query = current.query;
+                    latest.params = current.params;
+                    this.syncRouteProps(latest);
+                }
             }
             this.assignRoute(refreshedRoute);
         }
     }
 
-    protected genRoute(path: string): ElementRoute {
+    protected genRoute(path: string, rules?: RouterRule[], pathPrefix?: string): ElementRoute {
+        rules = rules || this.rules || [];
         let [p = '', query = ''] = path.split('?');
         const queryParams = parseQueryString(query);
-        p = urlJoin(p);
-        const { rules } = this;
+        p = formatUrl(p);
         let isMatch = false,
+            isPartial = false,
             matchedRoute: ElementRoute = {
                 path: p,
                 query: queryParams,
                 querystring: query
             };
         for (const rule of rules) {
-            const rulePath = urlJoin(rule.path);
-            p = urlJoin(p);
+            const rulePath = formatUrl((pathPrefix ? pathPrefix + '/' : '') + rule.path);
             const matchResult = matchUrlTemplate<{ [key: string]: string }>(p, rulePath);
             if (matchResult) {
+                isPartial = matchResult.partial;
+                if (isPartial) {
+                    matchedRoute.matchPath = matchResult.match;
+                }
                 isMatch = true;
-                matchedRoute.params = matchResult;
+                matchedRoute.params = matchResult.params;
                 matchedRoute.rule = rule;
                 break;
             }
@@ -192,10 +238,17 @@ export class Router {
             if (defaultRule) {
                 matchedRoute.params = {};
                 matchedRoute.rule = defaultRule;
-                matchedRoute.path = template(urlJoin(defaultRule.path), {}) + (query ? '?' + query : '');
+                matchedRoute.path =
+                    template(formatUrl((pathPrefix ? pathPrefix + '/' : '') + defaultRule.path), {}) +
+                    (query ? '?' + query : '');
             }
         }
-        matchedRoute.props = this.adaptor.create({});
+        if (isPartial) {
+            const subRules = matchedRoute.rule.subRules || [];
+            if (subRules.length > 0) {
+                matchedRoute.subRoute = this.genRoute(path, subRules, matchedRoute.matchPath);
+            }
+        }
         return matchedRoute;
     }
 }

@@ -9,6 +9,6 @@ const { defineComponent } = Scent;
  */
 export const home = defineComponent({
     template: `
-    
+        主页
     `
 })

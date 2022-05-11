@@ -50,6 +50,7 @@
                 <span><test ref="test" :title="title"></test></span>
                 <h1 s-for:item="list" s-key="name" @click="handleClick">{item.name}</h1>
                 <button @click="$push('./home/test/display')">go</button>
+                <!--<p>a</p>-->
                 </div>
                 `,
                 setup(props, instance) {

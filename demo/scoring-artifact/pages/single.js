@@ -7,6 +7,8 @@ const { defineComponent } = Scent;
  * 若有，则跳转到对局页面
  * 若无，则显示开启对局组件
  */
-export const home = defineComponent({
-
+export const single = defineComponent({
+    template:`
+        记录页面
+    `
 })
