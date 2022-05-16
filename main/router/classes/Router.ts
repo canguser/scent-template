@@ -149,6 +149,7 @@ export class Router {
             const latestRoute = this.latestRoute || {};
             const path = location.hash.slice(1) || '';
             const currentRoute = this.genRoute(path);
+            console.log('currentRoute', currentRoute);
             if (path !== currentRoute.path) {
                 location.hash =
                     currentRoute.path + (currentRoute.querystring?.length ? '?' + currentRoute.querystring : '');
@@ -227,30 +228,43 @@ export class Router {
                 path: p,
                 query: queryParams,
                 querystring: query
-            };
+            },
+            matchedRoutes: ElementRoute[] = [];
         for (const rule of rules) {
+            let ruleMatchResult: ElementRoute = {};
             const rulePath = formatUrl((pathPrefix ? pathPrefix + '/' : '') + rule.path);
             const matchResult = matchUrlTemplate<{ [key: string]: string }>(p, rulePath, {
                 matchPrefix: true
             });
             if (matchResult) {
-                isPartial = rule.subRules?.length > 0;
-                matchedRoute.matchPath = matchResult.match;
+                isPartial = matchResult.partial;
+                ruleMatchResult.matchPath = matchResult.match;
                 isMatch = true;
-                matchedRoute.params = {
+                ruleMatchResult.params = {
                     ...rule.defaultParams,
                     ...matchResult.params
                 };
-                matchedRoute.rule = rule;
-                break;
+                ruleMatchResult.rule = rule;
+                matchedRoutes.push(ruleMatchResult);
+                if (!isPartial) {
+                    Object.assign(matchedRoute, ruleMatchResult);
+                    break;
+                }
             }
+        }
+        if (isMatch && isPartial && matchedRoutes.length > 0) {
+            // matched route is the route with the longest match path
+            const ruleMatchedRoute = matchedRoutes.reduce((a, b) => {
+                return a.matchPath.length > b.matchPath.length ? a : b;
+            });
+            Object.assign(matchedRoute, ruleMatchedRoute);
         }
         if (!isMatch) {
             const defaultRule = rules.find((rule) => rule.default) || rules[0];
             if (defaultRule) {
                 matchedRoute.params = { ...defaultRule.defaultParams };
                 matchedRoute.rule = defaultRule;
-                matchedRoute.matchPath = formatUrl(
+                matchedRoute.path = matchedRoute.matchPath = formatUrl(
                     template(
                         (pathPrefix ? pathPrefix + '/' : '') + defaultRule.path,
                         new Proxy(defaultRule.defaultParams || {}, {
@@ -264,14 +278,17 @@ export class Router {
                         })
                     )
                 );
+            } else {
+                matchedRoute.path = pathPrefix;
             }
         }
-        if (isPartial) {
-            const subRules = matchedRoute.rule.subRules || [];
+        const subRules = matchedRoute.rule?.subRules || [];
+        if (isPartial || subRules.length > 0) {
+            const subRoute = this.genRoute(path, subRules, matchedRoute.matchPath);
             if (subRules.length > 0) {
-                matchedRoute.subRoute = this.genRoute(path, subRules, matchedRoute.matchPath);
-                matchedRoute.path = matchedRoute.matchPath = matchedRoute.subRoute.matchPath;
+                matchedRoute.subRoute = subRoute;
             }
+            matchedRoute.path = subRoute.path;
         }
         return matchedRoute;
     }
