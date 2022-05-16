@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+        <div class="q">
+            <span></span>
+            <h1></h1>
+        </div>
+        <script type="module">
+            import {
+                ref,
+                reactive,
+                computed
+            } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+            import {
+                defineComponent,
+                createRouter,
+                globalVars,
+                useRoute,
+                pushRoute
+            } from '../../dist/scent.template.esm.js';
+            import '../VueReactiveAdaptor.js';
+            globalVars.$push = function (...args) {
+                return pushRoute(...args);
+            };
+
+            const App = defineComponent({
+                template: `
+                <div>
+                    <h1>header: {$props.header}</h1>
+                    <!--- router --->
+                </div>
+                `
+            });
+
+            const Props = defineComponent({
+                name: 'props',
+                template: `<span>props: {$props.name}</span>`
+            });
+
+            const Home = defineComponent({
+                name: 'Home',
+                template: `
+                <div>
+                    <h1>home: {$props.header}</h1>
+                </div>
+                `
+            });
+            const Home2 = defineComponent({
+                name: 'Home2',
+                template: `
+                <div>
+                    <h1>home2: {$props.header}</h1>
+                                   <!--- router --->
+                     </div>
+                `
+            });
+            const ele = document.querySelector('.q');
+            const router = createRouter({
+                rules: [
+                    {
+                        path: '/',
+                        component: App,
+                        props: true,
+                        subRules: [
+                            {
+                                path: '/home',
+                                component: Home,
+                                props: true
+                            },
+                            {
+                                path: '/home2',
+                                component: Home2,
+                                props: true,
+                                subRules: [
+                                    {
+                                        path: '/props/{name}',
+                                        component: Props,
+                                        props: true,
+                                        defaultParams: {
+                                            name: 'default'
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            });
+            ele.appendChild(router);
+        </script>
+    </body>
+</html>

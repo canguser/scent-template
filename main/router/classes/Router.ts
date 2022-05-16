@@ -8,8 +8,8 @@ import { register } from '@rapidly/utils/lib/commom/dom/DomEvent';
 import { merge } from '@rapidly/utils/lib/commom/object/merge';
 import { matchUrlTemplate } from '@rapidly/utils/lib/commom/url/matchUrlTemplate';
 import { formatUrl } from '@rapidly/utils/lib/commom/url/formatUrl';
-import { pathJoin } from '@rapidly/utils/lib/commom/path/pathJoin';
 import { findNode } from '../../utils/DomHelper';
+import { waitImmediately } from '@rapidly/utils/lib/commom/async/waitImmediately';
 
 export interface RouterRule {
     name?: string;
@@ -19,6 +19,7 @@ export interface RouterRule {
     default?: boolean;
     keepAlive?: boolean;
     subRules?: RouterRule[];
+    defaultParams?: { [key: string | symbol]: any };
 }
 
 export interface BasicRouterOptions {
@@ -59,12 +60,16 @@ export class Router {
             if (!preventHashChangeHandling) {
                 preventHashChangeHandling = true;
                 this.applyRoute();
-                preventHashChangeHandling = false;
+                waitImmediately({}).then(() => {
+                    preventHashChangeHandling = false;
+                });
             }
         });
         preventHashChangeHandling = true;
         this.applyRoute();
-        preventHashChangeHandling = false;
+        waitImmediately({}).then(() => {
+            preventHashChangeHandling = false;
+        });
     }
 
     get mode() {
@@ -124,14 +129,16 @@ export class Router {
 
     private syncRouteProps(route: ElementRoute) {
         const { rule, query, params } = route;
-        if (rule.props) {
+        if (rule.props && route.props) {
             const newProps =
                 typeof rule.props === 'function'
                     ? rule.props(params, query)
                     : rule.props === true
                     ? { ...query, ...params }
                     : rule.props;
-            Object.keys(newProps).forEach((key) => {
+            // get all key for newProps and props
+            const keys = [...new Set([...Object.keys(newProps), ...Object.keys(route.props)])];
+            keys.forEach((key) => {
                 route.props[key] = newProps[key];
             });
         }
@@ -171,18 +178,20 @@ export class Router {
                         } else if (parentRoute && parentRoute.element) {
                             const placeholderText = '- router -';
                             const placeholder = findNode(parentRoute.element, (node) => {
-                                return node.nodeType === 3 && node.textContent === placeholderText;
+                                return node.nodeType === Node.COMMENT_NODE && node.textContent === placeholderText;
                             });
                             if (placeholder && placeholder.parentNode) {
                                 placeholder.parentNode.replaceChild(newEle, placeholder);
-                            }else {
+                            } else {
                                 // todo - disable current route
                             }
                         } else {
                             this.target.appendChild(newEle);
                         }
+                        this.syncRouteProps(current);
                     }
-                    this.syncRouteProps(current);
+                    // do not loop latest routes
+                    latest = undefined;
                 }
             }
             let refreshedRoute = latestRoute;
@@ -221,14 +230,17 @@ export class Router {
             };
         for (const rule of rules) {
             const rulePath = formatUrl((pathPrefix ? pathPrefix + '/' : '') + rule.path);
-            const matchResult = matchUrlTemplate<{ [key: string]: string }>(p, rulePath);
+            const matchResult = matchUrlTemplate<{ [key: string]: string }>(p, rulePath, {
+                matchPrefix: true
+            });
             if (matchResult) {
-                isPartial = matchResult.partial;
-                if (isPartial) {
-                    matchedRoute.matchPath = matchResult.match;
-                }
+                isPartial = rule.subRules?.length > 0;
+                matchedRoute.matchPath = matchResult.match;
                 isMatch = true;
-                matchedRoute.params = matchResult.params;
+                matchedRoute.params = {
+                    ...rule.defaultParams,
+                    ...matchResult.params
+                };
                 matchedRoute.rule = rule;
                 break;
             }
@@ -236,17 +248,29 @@ export class Router {
         if (!isMatch) {
             const defaultRule = rules.find((rule) => rule.default) || rules[0];
             if (defaultRule) {
-                matchedRoute.params = {};
+                matchedRoute.params = { ...defaultRule.defaultParams };
                 matchedRoute.rule = defaultRule;
-                matchedRoute.path =
-                    template(formatUrl((pathPrefix ? pathPrefix + '/' : '') + defaultRule.path), {}) +
-                    (query ? '?' + query : '');
+                matchedRoute.matchPath = formatUrl(
+                    template(
+                        (pathPrefix ? pathPrefix + '/' : '') + defaultRule.path,
+                        new Proxy(defaultRule.defaultParams || {}, {
+                            get: (target, key) => {
+                                const value = target[key];
+                                if (value != null && value !== '') {
+                                    return value;
+                                }
+                                return encodeURIComponent(' ');
+                            }
+                        })
+                    )
+                );
             }
         }
         if (isPartial) {
             const subRules = matchedRoute.rule.subRules || [];
             if (subRules.length > 0) {
                 matchedRoute.subRoute = this.genRoute(path, subRules, matchedRoute.matchPath);
+                matchedRoute.path = matchedRoute.matchPath = matchedRoute.subRoute.matchPath;
             }
         }
         return matchedRoute;
