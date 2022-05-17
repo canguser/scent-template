@@ -1,5 +1,5 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../../core/context/Context';
+import { Context } from '@scent/core/typing/context/Context';
 
 export class TextStrategy extends BasicStrategy {
     match<C extends Context>(element: Element, context: C): string[] | false {

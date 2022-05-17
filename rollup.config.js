@@ -33,7 +33,9 @@ export default {
         name: libName
     },
     plugins: [
-        typescript(),
+        typescript({
+            tsconfig: './tsconfig.rollup.json',
+        }),
         nodePolyfills(),
         resolve({
             extensions

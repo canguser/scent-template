@@ -1,6 +1,6 @@
-import { Context } from '../../core/context/Context';
 import { StrategyType } from '../enum/StrategyType';
-import { ScentObject } from '../../utils/ScentObject';
+import { Context } from '@scent/core/typing/context/Context';
+import { ScentObject } from '@scent/core/typing/utils/ScentObject';
 
 export abstract class BasicStrategy<T = Element> extends ScentObject {
     type: StrategyType = StrategyType.Inherited;

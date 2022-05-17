@@ -1,10 +1,8 @@
 {
-  "compilerOptions": {
-    "module": "esnext",
-    "target": "es6",
-    "moduleResolution": "Node"
-  },
-  "exclude": [
-    "node_modules"
-  ]
+    "extends": "./tsconfig.rollup.json",
+    "compilerOptions": {
+        "declaration": true,
+        "outDir": "./typing",
+        "rootDir": "./main"
+    }
 }

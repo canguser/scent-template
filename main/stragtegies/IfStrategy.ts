@@ -1,6 +1,6 @@
 import { BasicStrategy } from './BasicStrategy';
-import { Context } from '../../core/context/Context';
 import { StrategyType } from '../enum/StrategyType';
+import { Context } from '@scent/core/typing/context/Context';
 
 export class IfStrategy extends BasicStrategy {
     type: StrategyType = StrategyType.Alienated_UNIQUE;
