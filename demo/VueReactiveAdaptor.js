@@ -1,4 +1,5 @@
-import { ProxyAdaptor, configuration } from '../dist/scent.template.esm.js';
+import { ProxyAdaptor, use } from '../../core/dist/scent.core.esm.js';
+import { scentTemplate } from '../dist/scent.template.esm.js';
 import {
     ReactiveEffect,
     reactive,
@@ -32,5 +33,9 @@ class VueReactiveAdaptor extends ProxyAdaptor {
     }
 }
 
-const scopeManager = window.scopeManager = configuration.get('instances.scopeManager');
-scopeManager.adaptProxy(new VueReactiveAdaptor());
+use(({ configuration }) => {
+    const scopeManager = (window.scopeManager = configuration.get('instances.scopeManager'));
+    scopeManager.adaptProxy(new VueReactiveAdaptor());
+});
+
+use(scentTemplate);

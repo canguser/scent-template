@@ -6,10 +6,12 @@ import { EventStrategy } from './stragtegies/EventStrategy';
 import { ModelStrategy } from './stragtegies/ModelStrategy';
 import { TextStrategy } from './stragtegies/TextStrategy';
 import { useConfiguration } from './configuration';
+import { BasicStrategy } from './stragtegies/BasicStrategy';
 
 export * from './component';
 
 export const scentTemplate: PluginCallback = (scent: Scent) => {
+    console.log(scent)
     scent.configuration.merge({
         strategies: [
             new ForStrategy(),
@@ -19,6 +21,8 @@ export const scentTemplate: PluginCallback = (scent: Scent) => {
             new ModelStrategy(),
             new TextStrategy()
         ]
+    }, {
+        integralClasses: [BasicStrategy]
     });
     useConfiguration(scent.configuration);
 };

@@ -2,8 +2,9 @@ import { toDashName, traversingTreeNode } from '../utils/NormalUtils';
 import { BasicStrategy } from '../stragtegies/BasicStrategy';
 import { StrategyType } from '../enum/StrategyType';
 import { clearNodeAttribute, getAttrObject, getNodeAttribute } from '../utils/DomHelper';
-import { AdaptedContext, configuration, ScopeManager } from '@scent/core';
+import { Scent, ScopeManager } from '@scent/core';
 import { Context } from '@scent/core/typing/context/Context';
+import { getConfiguration } from '../configuration';
 
 class ComponentInstance {
     private refContextMap: Map<string, any> = new Map();
@@ -19,7 +20,7 @@ class ComponentInstance {
     }
 
     async nextTick(fn: () => void) {
-        const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
+        const adaptor = getConfiguration().get<ScopeManager>('instances.scopeManager').proxyAdaptor;
         return adaptor?.nextTick?.(fn) || fn();
     }
 }
@@ -64,7 +65,7 @@ function renderComponent(
         dashedComponents[toDashName(key)] = components[key];
     });
     if (target.nodeType === Node.ELEMENT_NODE) {
-        const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
+        const adaptor = getConfiguration().get<ScopeManager>('instances.scopeManager').proxyAdaptor;
         for (const key in dashedComponents) {
             if ((target.tagName || '').toLowerCase() === key) {
                 const componentFn = dashedComponents[key];
@@ -113,7 +114,7 @@ function renderSlots(target: Element, slotsParent?: Element) {
 
 export function renderByStrategy(options: RenderStrategyOptions): string[] {
     const { target, components, context, instance } = options;
-    const _strategies = configuration.get<BasicStrategy[]>('strategies') || [];
+    const _strategies = getConfiguration().get<BasicStrategy[]>('strategies') || [];
     const results: string[] = [];
     traversingTreeNode(target, 'childNodes', (node) => {
         let canGoDeep = true;
@@ -148,13 +149,14 @@ export function defineComponent(options: ComponentOptions): ComponentFn {
     return (props: any, fnOptions?: ComponentFnOptions) => {
         const { slotsParent, parentInstance, refName, alias } = fnOptions || {};
         props = props || {};
-        const adaptor = configuration.get<ScopeManager>('instances.scopeManager').proxyAdaptor;
+        const adaptor = getConfiguration().get<ScopeManager>('instances.scopeManager').proxyAdaptor;
         const template = document.createElement('template');
         template.innerHTML = options.template;
         const readonlyProps = adaptor.create(props, true);
         const component = document.createElement(alias || options.name || 'App');
         const instance = new ComponentInstance(component);
-        const context = new AdaptedContext({
+        const scentInstance = getConfiguration().get<Scent>('instances.scent');
+        const context = scentInstance.createContext({
             ...options.setup?.call?.(instance, readonlyProps, instance),
             $props: readonlyProps
         });
