@@ -50,7 +50,7 @@ function rgba2Hex(colorStr, prefix = '|c') {
 
 function hex2rgba(hex) {
     const reg = /(\|c|#)([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})/i;
-    const [, a = 'FF', r = 'FF', g = 'FF', b = 'FF'] = hex.match(reg);
+    const [, , a = 'FF', r = 'FF', g = 'FF', b = 'FF'] = hex.match(reg);
     return `rgba(${parseInt(r, 16)},${parseInt(g, 16)},${parseInt(b, 16)},${(parseInt(a, 16) / 255).toFixed(3)})`;
 }
 
