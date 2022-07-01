@@ -220,7 +220,7 @@ export const colorRichText = defineComponent({
                 setColor(item);
             },
             onblur(){
-                console.log(getSelection());
+                // console.log(getSelection());
             },
             preventEvent(e){
                 e.preventDefault()

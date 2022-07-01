@@ -68,7 +68,7 @@ function wrapText(text, colorStr, defaultColor = '|cff000000') {
 export function convertColor(dom, defaultColor = '|cff000000') {
     const originText = dom.innerText;
     const splitByReturn = originText.split('\n');
-    // console.log(splitByReturn);
+    console.log(splitByReturn);
     let index = 0;
     let result = '';
 
@@ -99,19 +99,20 @@ export function convertColor(dom, defaultColor = '|cff000000') {
                             // console.log('match |n newLine');
                             result += '|n';
                         }
-                        // console.log('match start');
+                        console.log('match start');
                         result += wrapText(text, color, defaultColor);
-                        if (toMatch.endsWith(text)) {
-                            // console.log('match end');
+                        if (toMatch === text) {
+                            console.log('match send');
                             index++;
                         }
                         break;
                     }
                     if (toMatch.indexOf(text) > 0) {
-                        // console.log('match continue');
+                        console.log('match continue');
                         result += wrapText(text, color, defaultColor);
-                        if (toMatch.endsWith(text)) {
-                            // console.log('match end');
+                        const indexOfText = toMatch.indexOf(text);
+                        if (toMatch.slice(indexOfText) === text) {
+                            console.log('match cend');
                             index++;
                         }
                         break;
