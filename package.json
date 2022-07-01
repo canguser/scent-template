@@ -42,7 +42,7 @@
         "package.json"
     ],
     "dependencies": {
-        "@rapidly/utils": "2.0.0-beta20",
+        "@rapidly/utils": "2.0.0-beta21",
         "rimraf": "^2.6.0"
     },
     "devDependencies": {},

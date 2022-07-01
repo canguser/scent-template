@@ -7,6 +7,7 @@ import { ModelStrategy } from './stragtegies/ModelStrategy';
 import { TextStrategy } from './stragtegies/TextStrategy';
 import { useConfiguration } from './configuration';
 import { BasicStrategy } from './stragtegies/BasicStrategy';
+import { HtmlStrategy } from './stragtegies/HtmlStrategy';
 
 export * from './component';
 
@@ -19,6 +20,7 @@ export const scentTemplate: PluginCallback = (scent: Scent) => {
             new AttrStrategy(),
             new EventStrategy(),
             new ModelStrategy(),
+            new HtmlStrategy(),
             new TextStrategy()
         ]
     }, {
