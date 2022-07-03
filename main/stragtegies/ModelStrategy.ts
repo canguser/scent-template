@@ -13,24 +13,25 @@ export class ModelStrategy extends BasicStrategy {
         }
         // generate render scopes from attribute nodes
         return attrInfos.reduce((scopes: string[], attr) => {
-            const { value, name, more } = attr;
-            console.log(value, name, more);
+            let { value, name, more } = attr;
+            name = name || 'value'
+            // console.log(value, name, more);
             scopes.push(
                 context.scope.bindSetter(element, {
-                    property: 'value',
+                    property: name,
                     expression: value
                 })
             );
             scopes.push(
                 context.scope.bindAttr(element, {
-                    attr: name || 'value',
+                    attr: name,
                     expression: value
                 })
             );
             scopes.push(
                 context.scope.bindEvent(element, {
                     eventName: more || 'input',
-                    expression: `e=>((${value})=e.detail?e.detail.value:(e.target?e.target.value:null))`
+                    expression: `e=>((${value})=e.detail?e.detail.${name}:(e.target?e.target.${name}:null))`
                 })
             );
             // remove all related attributes from target

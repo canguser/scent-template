@@ -1,8 +1,8 @@
-import { Reactivity, Scent } from '../lib.js';
+import { $_, Reactivity, Scent } from '../lib.js';
 import { convertColor, traversingTreeNode } from '../color-convert.js';
 
 const { defineComponent } = Scent;
-const { reactive, computed, ref } = Reactivity;
+const { reactive, computed, ref, toRef } = Reactivity;
 
 function appendAfter(newDom, dom) {
     const parent = dom.parentNode;
@@ -21,46 +21,6 @@ function createDom(html) {
     return dom.content;
 }
 
-var $_ = (function (exports) {
-    'use strict';
-
-    function neverPromise() {
-        return new Promise(() => undefined);
-    }
-
-    const defaultContext = {};
-    function debounce(duringOrOptions = 200) {
-        const debounceOptions = typeof duringOrOptions === 'number' ? { during: duringOrOptions } : duringOrOptions;
-        const {
-            leading = false,
-            during = 200,
-            context = defaultContext,
-            uniqueApi = 'defaultApi',
-            callback = () => undefined
-        } = debounceOptions;
-        const eqName = `_debounce_${uniqueApi}`;
-        if (!leading) {
-            clearTimeout(context[eqName]);
-        }
-        if (!leading || !context[eqName]) {
-            return new Promise((resolve) => {
-                context[eqName] = setTimeout(() => {
-                    context[eqName] = undefined;
-                    resolve(callback());
-                }, during);
-            });
-        } else {
-            return neverPromise();
-        }
-    }
-
-    exports.debounce = debounce;
-
-    Object.defineProperty(exports, '__esModule', { value: true });
-
-    return exports;
-})({});
-
 export const colorRichText = defineComponent({
     name: 'color-show',
     template: `
@@ -74,17 +34,20 @@ export const colorRichText = defineComponent({
             </div>
         </div>
         <div class="right-box">
-            <textarea name="test" id="" cols="30" rows="10" s-model="value" readonly></textarea>
+            <textarea name="test" id="" cols="30" rows="10" s-model="textValue" readonly></textarea>
         </div>
+        {watchValue}
     </div>
     
     `,
     setup(props, instance) {
+        const value = toRef(props, 'value');
         const colorHistories = reactive([]);
         const richTextHistory = [];
         const rollbackHistory = [];
         const richText = ref('');
-        const value = ref('');
+        const textValue = ref('');
+
         function setRichText() {
             const div = instance.target.querySelector('.color-display-box');
             const originHtml = richText.value;
@@ -92,11 +55,32 @@ export const colorRichText = defineComponent({
                 richText.value = div.innerHTML;
                 richTextHistory.push(originHtml);
                 rollbackHistory.splice(0);
+                textValue.value = convertColor(div, '|cffffffff');
+                $_.debounce(100).then(() => {
+                    instance.target.dispatchEvent(
+                        new CustomEvent('updatevalue', {
+                            detail: {
+                                value: richText.value,
+                                code: textValue.value
+                            }
+                        })
+                    );
+                });
             }
-            instance.nextTick(() => {
-                value.value = convertColor(div, '|cffffffff');
-            });
         }
+
+        const watchValue = computed(() => {
+            const { value: htmlValue } = value;
+            const div = instance.target.querySelector('.color-display-box');
+            if (div && htmlValue !== div.innerHTML) {
+                // console.log('wwwupdatevalue', div.innerHTML);
+                div.innerHTML = htmlValue;
+                $_.debounce(100).then(() => {
+                    setRichText();
+                });
+            }
+        });
+
         function rollback() {
             if (richTextHistory.length === 0) {
                 return false;
@@ -104,7 +88,7 @@ export const colorRichText = defineComponent({
             rollbackHistory.push(richText.value);
             richText.value = richTextHistory.pop();
             instance.nextTick(() => {
-                value.value = convertColor(instance.target.querySelector('.color-display-box'), '|cffffffff');
+                textValue.value = convertColor(instance.target.querySelector('.color-display-box'), '|cffffffff');
             });
             return true;
         }
@@ -115,7 +99,7 @@ export const colorRichText = defineComponent({
             richTextHistory.push(richText.value);
             richText.value = rollbackHistory.pop();
             instance.nextTick(() => {
-                value.value = convertColor(instance.target.querySelector('.color-display-box'), '|cffffffff');
+                textValue.value = convertColor(instance.target.querySelector('.color-display-box'), '|cffffffff');
             });
             return true;
         }
@@ -188,9 +172,10 @@ export const colorRichText = defineComponent({
             setRichText();
         }
         return {
-            value,
+            textValue,
             colorHistories,
             richText,
+            watchValue,
             setCurrentColor(e) {
                 setColor(e.target.value);
             },
@@ -219,12 +204,12 @@ export const colorRichText = defineComponent({
             setHistory(e, item) {
                 setColor(item);
             },
-            onblur(){
+            onblur() {
                 // console.log(getSelection());
             },
-            preventEvent(e){
-                e.preventDefault()
-                e.stopPropagation()
+            preventEvent(e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
         };
     }

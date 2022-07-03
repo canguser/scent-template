@@ -1,7 +1,7 @@
 import { toDashName, traversingTreeNode } from '../utils/NormalUtils';
 import { BasicStrategy } from '../stragtegies/BasicStrategy';
 import { StrategyType } from '../enum/StrategyType';
-import { clearNodeAttribute, getAttrObject, getNodeAttribute } from '../utils/DomHelper';
+import { clearNodeAttribute, getAttrObject, getNodeAttribute, removeAllChildren } from '../utils/DomHelper';
 import { Scent, ScopeManager } from '@scent/core';
 import { Context } from '@scent/core/typing/context/Context';
 import { getConfiguration } from '../configuration';
@@ -77,8 +77,9 @@ function renderComponent(
                     alias: key,
                     refName: target.getAttribute('ref')
                 });
+                component['_bindAttr'] = reactProps;
                 target.parentNode.replaceChild(component, target);
-                return true;
+                return component;
             }
         }
     }
@@ -118,7 +119,10 @@ export function renderByStrategy(options: RenderStrategyOptions): string[] {
     const results: string[] = [];
     traversingTreeNode(target, 'childNodes', (node) => {
         let canGoDeep = true;
-        renderComponent(node, components || {}, instance);
+        const component = renderComponent(node, components || {}, instance);
+        if (component) {
+            node = component;
+        }
         if (renderSlots(node, options.slotsParent)) {
             return false;
         }
@@ -153,7 +157,8 @@ export function defineComponent(options: ComponentOptions): ComponentFn {
         const template = document.createElement('template');
         template.innerHTML = options.template;
         const readonlyProps = adaptor.create(props, true);
-        const component = document.createElement(alias || options.name || 'App');
+        const component = slotsParent ? slotsParent.cloneNode(true) as Element : document.createElement(alias || options.name || 'App');
+        removeAllChildren(component);
         const instance = new ComponentInstance(component);
         const scentInstance = getConfiguration().get<Scent>('instances.scent');
         const context = scentInstance.createContext({

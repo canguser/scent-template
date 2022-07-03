@@ -1,6 +1,6 @@
 {
     "name": "@scent/template",
-    "version": "3.0.0-beta5",
+    "version": "3.0.0-beta6",
     "description": "",
     "main": "dist/scent.template.js",
     "mainMini": "dist/scent.template.mini.js",

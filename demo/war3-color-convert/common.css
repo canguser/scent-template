@@ -27,7 +27,7 @@ body {
 }
 
 .color-display-box {
-    background: black !important;
+    background: #444 !important;
     color: white;
 }
 
@@ -83,4 +83,13 @@ textarea,
     width: 20px;
     margin: 0 5px;
     cursor: pointer;
+}
+
+.options{
+    display: flex;
+    justify-content: center;
+}
+
+.options label{
+    margin: 10px;
 }

@@ -99,7 +99,7 @@ export function convertColor(dom, defaultColor = '|cff000000') {
                             // console.log('match |n newLine');
                             result += '|n';
                         }
-                        console.log('match start');
+                        // console.log('match start');
                         result += wrapText(text, color, defaultColor);
                         if (toMatch === text) {
                             console.log('match send');
@@ -108,11 +108,11 @@ export function convertColor(dom, defaultColor = '|cff000000') {
                         break;
                     }
                     if (toMatch.indexOf(text) > 0) {
-                        console.log('match continue');
+                        // console.log('match continue');
                         result += wrapText(text, color, defaultColor);
                         const indexOfText = toMatch.indexOf(text);
                         if (toMatch.slice(indexOfText) === text) {
-                            console.log('match cend');
+                            // console.log('match cend');
                             index++;
                         }
                         break;

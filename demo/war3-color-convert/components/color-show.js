@@ -1,7 +1,7 @@
-import { Reactivity, Scent } from '../lib.js';
+import { $_, Reactivity, Scent } from '../lib.js';
 import { convertFromColor } from '../color-convert.js';
 const { defineComponent } = Scent;
-const { reactive, computed, ref } = Reactivity;
+const { reactive, computed, ref, toRefs, toRef } = Reactivity;
 
 export const colorShow = defineComponent({
     name: 'color-show',
@@ -13,17 +13,35 @@ export const colorShow = defineComponent({
             <div class="right-box" >
                 <div class="color-display-box" s-html="convertedHtml"></div>
             </div>
+            {watchValue}
         </div>
     `,
     setup(props, instance) {
-        const value = ref('');
-        const convertedHtml = computed(() => convertFromColor(value.value));
+        const value = toRef(props, 'value');
+        const realValue = ref('');
+        const watchValue = computed(() => {
+            realValue.value = value.value || '';
+        });
+        const convertedHtml = computed(() => convertFromColor(realValue.value));
+        function submitValue(value) {
+            realValue.value = value;
+            const box = instance.target.querySelector('.color-display-box');
+            instance.target.dispatchEvent(
+                new CustomEvent('updatevalue', {
+                    detail: {
+                        value: realValue.value,
+                        html: box.innerHTML
+                    }
+                })
+            );
+        }
         return {
-            value,
+            value: realValue,
+            watchValue,
             convertedHtml,
             updateValue(e) {
-                instance.nextTick(() => {
-                    value.value = (e.target.value || '').replace(/[\n\r]/g, '|n');
+                $_.debounce(200).then(() => {
+                    submitValue((e.target.value || '').replace(/[\n\r]/g, '|n'));
                 });
             }
         };

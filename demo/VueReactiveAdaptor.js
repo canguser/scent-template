@@ -1,5 +1,5 @@
 // import { ProxyAdaptor, use } from '../../core/dist/scent.core.esm.js';
-import { ProxyAdaptor, use } from 'https://unpkg.com/@scent/core@3.0.0-beta2/dist/scent.core.esm.js';
+import { ProxyAdaptor, use } from 'https://unpkg.com/@scent/core@latest/dist/scent.core.esm.js';
 import { scentTemplate } from '../dist/scent.template.esm.js';
 import {
     ReactiveEffect,
