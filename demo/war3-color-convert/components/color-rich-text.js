@@ -56,6 +56,7 @@ export const colorRichText = defineComponent({
                 richTextHistory.push(originHtml);
                 rollbackHistory.splice(0);
                 textValue.value = convertColor(div, '|cffffffff');
+                console.log(textValue.value);
                 $_.debounce(100).then(() => {
                     instance.target.dispatchEvent(
                         new CustomEvent('updatevalue', {
@@ -145,13 +146,13 @@ export const colorRichText = defineComponent({
                 if (node.nodeType === Node.TEXT_NODE && node.parentNode.nodeType !== Node.COMMENT_NODE) {
                     if (selection.containsNode(node)) {
                         const text = node.textContent;
-                        if (node === frontNode) {
+                        if (node === frontNode && node !== backNode) {
                             // console.log(frontOffset);
                             const keepText = text.slice(0, frontOffset);
                             const changeText = text.slice(frontOffset);
                             node.textContent = keepText;
                             appendAfter(createDom(`<span style="color: ${color}">${changeText}</span>`), node);
-                        } else if (node === backNode) {
+                        } else if (node === backNode && node !== frontNode) {
                             const keepText = text.slice(backOffset);
                             const changeText = text.slice(0, backOffset);
                             node.textContent = keepText;
@@ -159,6 +160,22 @@ export const colorRichText = defineComponent({
                                 createDom(`<span style="color: ${color}">${changeText}</span>`),
                                 node
                             );
+                        } else if (node === backNode && node === frontNode) {
+                            const keepText = text.slice(0, frontOffset);
+                            const keepText2 = text.slice(backOffset);
+                            const changeText = text.slice(frontOffset, backOffset);
+                            const beforeNode = node.cloneNode(true)
+                            beforeNode.textContent = keepText;
+                            const afterNode = node.cloneNode(true)
+                            afterNode.textContent = keepText2;
+                            node.parentNode.insertBefore(beforeNode, node)
+                            appendAfter(afterNode, node)
+                            node.parentNode.insertBefore(
+                                createDom(`<span style="color: ${color}">${changeText}</span>`),
+                                node
+                            );
+                            // remove node
+                            node.parentNode.removeChild(node);
                         } else {
                             node.parentNode.replaceChild(
                                 createDom(`<span style="color: ${color}">${text}</span>`),
