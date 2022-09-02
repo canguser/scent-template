@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+</head>
+<body>
+<div class="q">
+    <span></span>
+    <h1></h1>
+</div>
+<script type="module">
+    import { ref, reactive, computed } from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+    import { defineComponent } from '../../dist/scent.template.esm.js';
+    import '../VueReactiveAdaptor.js';
+    const App = defineComponent({
+        template: `
+                {title}
+                <div>
+                    <div s-for:mapping="wordMappings" s-key="key">
+                        <div>
+                            <input class='wm-readonly' type='text' :value='mapping.key' readonly>
+                            <input type='text' :value='mapping.value' @input='e=>updateValue(mapping, e)'>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="refresh">test</button>
+                <button @click="t">t</button>
+                `,
+        setup() {
+            const wordList = ref([])
+            const existingWordList = ref([])
+
+            const userInputMapping = reactive([])
+            const wordMappings = computed(() => {
+                const allWords = [...existingWordList.value.map((v) => v.key)]
+                wordList.value.forEach((word) => {
+                    if (allWords.indexOf(word) === -1) {
+                        allWords.push(word)
+                    }
+                })
+                return allWords.map((word) => {
+                    return {
+                        key: word,
+                        value: existingWordList.value.find((v) => v.key === word)?.value || ''
+                    }
+                })
+            })
+            const title = ref([])
+            return {
+                title,
+                refresh() {
+                    wordList.value = Array.from({length:100}).map((v, i) => i)
+                },
+                t(){
+                    title.value = []
+                },
+                wordMappings
+            };
+        }
+    });
+    const ele = document.querySelector('.q');
+    ele.appendChild(App());
+</script>
+</body>
+</html>
