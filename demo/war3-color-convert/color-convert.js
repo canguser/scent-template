@@ -68,7 +68,7 @@ function wrapText(text, colorStr, defaultColor = '|cff000000') {
 export function convertColor(dom, defaultColor = '|cff000000') {
     const originText = dom.innerText;
     const splitByReturn = originText.split('\n');
-    console.log(splitByReturn);
+    // console.log(splitByReturn);
     let index = 0;
     let result = '';
 
@@ -122,7 +122,7 @@ export function convertColor(dom, defaultColor = '|cff000000') {
             }
         }
     });
-    return result;
+    return result.replace(/ /g, ' ');
 }
 
 export function convertFromColor(colorStr) {
