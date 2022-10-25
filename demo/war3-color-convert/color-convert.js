@@ -65,6 +65,53 @@ function wrapText(text, colorStr, defaultColor = '|cff000000') {
     return `${rgba2Hex(colorStr)}${text}|r`;
 }
 
+function getColorTextInfos(colorText){
+    const reg = /\|c[\dA-F]{8}/gi;
+    // colorText = colorText.replace(/\s/g, '&nbsp').replace(/</g, '&lt').replace(/>/g, '&gt').replace(/\n/g, '');
+    const colors = colorText.match(reg) || [];
+    const colorSplits = colorText.split(reg);
+    // console.log(colors, colorSplits);
+    const results = [];
+    colorSplits.forEach((split, index) => {
+        if (split !== '') {
+            const colorIndex = index - 1;
+            const color = colors[colorIndex];
+            const elementStr = split
+                .split('|r')
+                .map((text, i, all) => {
+                    // console.log(all);
+                    if (i === 0 && color && all.length > 1) {
+                        return {
+                            color,
+                            text
+                        };
+                    }
+                    return {
+                        text
+                    };
+                })
+            results.push(...elementStr);
+        }
+    });
+    return results
+}
+
+function mergeSameColor(text){
+    const validTexts = getColorTextInfos(text).filter(text=>text.text !== '')
+    let lastColor = '';
+    const results = []
+    for(let i = 0; i < validTexts.length; i++){
+        const text = validTexts[i];
+        if(text.color === lastColor){
+            results[results.length - 1].text += text.text;
+        }else{
+            results.push(text);
+            lastColor = text.color;
+        }
+    }
+    return results.map(text=>text.color ? `${text.color}${text.text}|r` : text.text).join('')
+}
+
 export function convertColor(dom, defaultColor = '|cff000000') {
     const originText = dom.innerText;
     const splitByReturn = originText.split('\n');
@@ -122,11 +169,13 @@ export function convertColor(dom, defaultColor = '|cff000000') {
             }
         }
     });
-    return result.replace(/ /g, ' ');
+    result = result.replace(/ /g, ' ');
+    // 将同样颜色区域合并
+    return mergeSameColor(result);
 }
 
 export function convertFromColor(colorStr) {
-    const reg = /\|c[0-9A-F]{8}/gi;
+    const reg = /\|c[\dA-F]{8}/gi;
     colorStr = colorStr.replace(/\s/g, '&nbsp').replace(/</g, '&lt').replace(/>/g, '&gt').replace(/\n/g, '');
     const colors = colorStr.match(reg) || [];
     const colorSplits = colorStr.split(reg);

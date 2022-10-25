@@ -1,0 +1,25 @@
+html {
+    font-size: 16px;
+}
+
+html,
+body {
+    /*width: 100%;*/
+    background: white;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.text-box{
+    padding: 50px;
+    background: #e0f4ff;
+    line-height: 2;
+}
