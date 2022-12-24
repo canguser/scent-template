@@ -10,15 +10,17 @@ export const app = (window.p = defineComponent({
     <div>
         <div class="text-box" s-if="codes.length > 0">
             <b>加群福利码（于 {codes[0].start} 更新）：</b><br>
-            1. 开局金木资源各加1000[无难度限制]：<br>
+            1. 开局金币加1000[无难度限制]：<br>
             <b @click="copy">{codes[2].code}</b><br><br>
             2. 开局额外获得一个命运宝箱[难2及以上可使用]：<br>
             <b @click="copy">{codes[0].code}</b><br><br>
             3. 使这局游戏你所有单位的伤害提升 10% [难4及以上可使用]：<br>
             <b @click="copy">{codes[3].code}</b><br><br>
-            4. 隐藏英雄 - 影杀者<br>
+            4. 隐藏英雄: 影杀者 - 漓<br>
             <b @click="copy">{codes[1].code}</b><br><br>
-            5. 黑曜石 * 2 [难3及以上可使用]：<br>
+            5. 隐藏英雄: 暗语者 - 玖<br>
+            <b @click="copy">{codes[5].code}</b><br><br>
+            6. 黑曜石 * 2 [难3及以上可使用]：<br>
             <b @click="copy">{codes[4].code}</b><br><br>
             - 福利码使用方法：<b>复制每点后面的代码，在游戏开始后在游戏聊天框中复制输入即可</b><br>
             - 以上福利码有效期截止 <b>{codes[0].end}</b>，届时会继续更新更多福利码。<br>
