@@ -16,11 +16,16 @@ export class AttrStrategy extends BasicStrategy {
             // generate render scopes from attribute nodes
             return attrInfos.map((attr) => {
                 element.removeAttribute(attr.fullName);
-                return context.scope.bindAttr(element, {
+                return [context.scope.bindAttr(element, {
                     attr: toCamelName(attr.name),
                     expression: attr.value
-                });
-            });
+                }), element.tagName === 'INPUT' ? [
+                    context.scope.bindSetter(element, {
+                        property: toCamelName(attr.name),
+                        expression: attr.value
+                    })
+                ]:[]];
+            }).flat();
         }
         return false;
     }
