@@ -129,8 +129,8 @@ export const app = (window.p = defineComponent({
                     <h3>调整选中元素({checkedColors.length||'0'}个)颜色 <button @click='applyChanges'>应用</button></h3>
                     <table style='display: inline-block'>
                         <th>色相({h>=0?'+'+h:h})：</th>
-                        <th>饱和度({s>=0?'+'+(s/10):(s/100)})：</th>
-                        <th>亮度({l>=0?'+'+(l/10):(l/10)})：</th>
+                        <th>饱和度({s>=0?'+'+(s/100):(s/100)})：</th>
+                        <th>亮度({l>=0?'+'+(l/100):(l/100)})：</th>
                         <tr>
                             <td><input type='number' min='-360' max='360' :value='h' @input='changeH'  ></td>
                             <td><input type='number' min='-100' max='100' :value='s' @input='changeS' ></td>
