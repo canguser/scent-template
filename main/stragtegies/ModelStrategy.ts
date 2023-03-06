@@ -15,6 +15,13 @@ export class ModelStrategy extends BasicStrategy {
         return attrInfos.reduce((scopes: string[], attr) => {
             let { value, name, more } = attr;
             name = name || 'value'
+            // console.log(value, name, more);
+            scopes.push(
+                context.scope.bindSetter(element, {
+                    property: name,
+                    expression: value
+                })
+            );
             scopes.push(
                 context.scope.bindAttr(element, {
                     attr: name,
