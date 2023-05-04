@@ -126,7 +126,7 @@ export const app = (window.p = defineComponent({
             <div s-if='model'>
                 <!--hsl调整-->
                 <div style='text-align: center'>
-                    <h3>调整选中元素({checkedColors.length||'0'}个)颜色 <button @click='applyChanges'>应用</button></h3>
+                    <h3><button @click='deselect'>反选</button>调整选中元素({checkedColors.length||'0'}个)颜色 <button @click='applyChanges'>应用</button></h3>
                     <table style='display: inline-block'>
                         <th>色相({h>=0?'+'+h:h})：</th>
                         <th>饱和度({s>=0?'+'+(s/100):(s/100)})：</th>
@@ -312,6 +312,17 @@ export const app = (window.p = defineComponent({
                 l.value = (parseFloat(e.target.value) || 0);
                 e.target.value = h.value || undefined;
                 refreshCheckedPath();
+            },
+            deselect(){
+                colors.value.forEach(item=>{
+                    if (item.checked){
+                        checkedPath.splice(checkedPath.indexOf(item.fakeLabel, 1));
+                        cancelChanges(item);
+                    }
+                    else{
+                        checkedPath.push(item.fakeLabel);
+                    }
+                })
             }
         }
     }
