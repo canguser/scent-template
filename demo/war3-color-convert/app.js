@@ -56,6 +56,7 @@ export const app = (window.p = defineComponent({
                     codeValue = codeValue.replace(reg, '|n'.repeat(num));
                 }
                 colorCode.value = codeValue;
+                cacheHtmlCode.value = htmlCode.value;
             }
         }
         return {
@@ -77,6 +78,7 @@ export const app = (window.p = defineComponent({
             changeColorCode(e) {
                 // 往下同步
                 cacheColorCode.value = e.detail.code;
+                htmlCode.value = e.detail.value;
                 if (autoHtml2Code.value) {
                     syncCacheCode();
                 }
