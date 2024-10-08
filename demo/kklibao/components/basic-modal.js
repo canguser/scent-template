@@ -4,7 +4,7 @@ const { defineComponent } = Scent;
 export const basicModal = defineComponent({
     name: 'basic-modal',
     template: `
-    <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" class="slds-modal slds-modal_large" :class="{'slds-fade-in-open': $props.isOpen}">
+    <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" class="slds-modal slds-modal_small" :class="{'slds-fade-in-open': $props.isOpen}">
       <div class="slds-modal__container">
         <div class="slds-modal__header">
           <h1 id="modal-heading-01" class="slds-modal__title slds-text-heading--medium slds-hyphenate">
