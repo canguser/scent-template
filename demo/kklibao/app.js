@@ -32,7 +32,7 @@ export const app = (window.p = defineComponent({
                     </div>
                     </th>
                     <th class="" scope="col">
-                    <div class="slds-truncate" title="礼包到期时间">礼包到期时间</div>
+                    <div class="slds-truncate" title="礼包到期时间">礼包码有效时间</div>
                     </th>
                     <th class="" scope="col">
                     <div class="slds-truncate" title="礼包类型">礼包类型</div>
