@@ -9,8 +9,10 @@ export const app = (window.p = defineComponent({
     components: {basicModal },
     template: `
         <div class='root-container'>
-            <h2 class="slds-text-align_center slds-text-heading_large slds-m-bottom_xx-small">KK礼物网 - KKLiWu.xyz</h2>
-            <h3 class="slds-text-align_center slds-text-heading_medium slds-m-bottom_small">本网站礼包码由互联网收集提供，致力做最全面且免费的礼包分享平台，觉得好用可Ctrl+D收藏哦。</h3>
+            <h2 class="slds-text-align_center slds-text-heading_large slds-m-bottom_xx-small">KK礼物网 - KKLiWu.xyz
+            <img src="https://palerock.cn/node-service/images/greasyfork/views-info/KKLiWu" alt="Views"></h2>
+            <h3 class="slds-text-align_center slds-text-heading_medium slds-m-bottom_small">
+            本网站礼包码由互联网收集提供，致力做最全面且免费的礼包分享平台，觉得好用可Ctrl+D收藏哦。</h3>
             <div class="slds-form-element search-input">
               <div class="slds-form-element__control">
                 <input type="text" s-model='keywords' placeholder="搜索地图" class="slds-input" />
