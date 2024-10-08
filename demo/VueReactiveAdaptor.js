@@ -1,11 +1,13 @@
-// import { ProxyAdaptor, use } from '../../core/dist/scent.core.esm.js';
-import { ProxyAdaptor, use } from 'https://unpkg.com/@scent/core@latest/dist/scent.core.esm.js';
-import { scentTemplate } from '../dist/scent.template.esm.js';
+export * as Scent from './libs/scent.template.esm.js';
+export * as Reactivity from './libs/reactivity.esm-browser.js';
+import { ProxyAdaptor, use } from './libs/scent.core.esm.js';
+import { scentTemplate } from './libs/scent.template.esm.js';
 import {
     ReactiveEffect,
     reactive,
     readonly as rd
-} from 'https://unpkg.com/@vue/reactivity@3.2.31/dist/reactivity.esm-browser.js';
+} from './libs/reactivity.esm-browser.js';
+
 
 class VueReactiveAdaptor extends ProxyAdaptor {
     initialize() {
