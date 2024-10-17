@@ -75,7 +75,7 @@ export const app = (window.p = defineComponent({
 Copyright 2024-2024 All Rights Reserved.</p>
         </div>
         <basic-modal ref="tipModal" :is-open="!!copyModalItem">
-            <div slot="header">复制成功</div>
+            <div slot="header" class='slds-text-heading_large slds-text-color_error' style='font-weight: bolder'>复制成功</div>
             <div class="slds-text-align_center modal-tips">
                 <img src='./resources/lc.png' alt='' style='width: 800px;margin: 0 auto;display: block'>
             </div>
